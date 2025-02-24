@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self';">
+    <title>Simkey App</title>
+    <link rel="stylesheet" href="./index.css" />
+</head>
+
+<body>
+    <div class="configure-menu-container" id="main-container">
+        <div class="configure-container opacity-low" id="configure-container">
+            <div class="menu-title">
+                Configure
+            </div>
+            <div class="configure-script-title-x">
+                <div class="configure-script-title" id="script-title">No script selected</div>
+                <button class="config-x" id="config-x" disabled>✖</button>
+            </div>
+            <div class="configure-option">
+                <div class="configure-option-title">Shortcut</div>
+                <input class="configure-option-input" id="configure-shortcut" placeholder="e.g. CTRL+F6" disabled>
+            </div>
+            <div class="configure-option">
+                <div class="configure-option-title">Repeat</div>
+                <input class="configure-option-input" id="configure-repeat" value="OFF" disabled>
+            </div>
+            <div class="configure-option" id="configure-mode">
+                <div class="configure-option-title">Mode</div>
+                <select class="configure-option-select" id="select-mode" disabled>
+                    <option value="DEFAULT">$DEFAULT</option>
+                </select>
+            </div>
+            <div class="configure-option" id="configure-switches">
+                <div class="configure-option-title">Switches</div>
+                <select class="configure-option-select" id="select-switches" disabled>
+                    <option value="">Add switch</option>
+                </select>
+            </div>
+            <div class="chosen-switch-container" id="chosen-switches">
+            </div>
+        </div>
+        <div class="script-menu" id="script-menu">
+            <div class="menu-title">
+                Scripts
+            </div>
+        </div>
+    </div>
+    <div class="option-buttons-container">
+        <button class="option-button opacity-low" id="run-button" disabled>🚀 Run</button>
+        <button class="option-button opacity-low" id="save-button" disabled>💾 Save</button>
+        <button class="option-button" id="load-button">💬 Load</button>
+        <button class="option-button" id="utils-button">🛠️ Utils</button>
+    </div>
+    <script src="./front.js"></script>
+</body>
+
+</html>
