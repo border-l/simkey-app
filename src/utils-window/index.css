@@ -1,0 +1,65 @@
+@font-face {
+    font-family: 'Montserrat';
+    src: url('./Montserrat-VariableFont_wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+}
+
+:root {
+    --body-bg: #121212;
+    --main-color: #1e1e1e;
+    --secondary-bg: #242424;
+    --text-color: #e0e0e0;
+    --accent-color: #bb86fc;
+    --hover-bg: #333333;
+    --border-color: #333333;
+    --button-bg: #3f3f3f;
+    --button-hover-bg: #4a4a4a;
+    --button-selected-bg: rgb(38, 124, 38);
+    --button-selected-hover-bg: rgb(49, 146, 49);
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+    font-family: 'Montserrat', sans-serif;
+    transition: all 0.1s;
+    transition-timing-function: ease-in-out;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--body-bg);
+}
+
+.buttons-container {
+    display: flex;
+    height: 100%;
+    padding: 20px;
+    gap: 20px;
+}
+
+.util-button {
+    border-radius: 0.5rem;
+    padding: 10px;
+    height: 100%;
+    width: 50%;
+    color: var(--text-color);
+    display: inline-block;
+    outline: 0;
+    border: 0;
+    background-color: var(--button-bg);
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.util-button:hover {
+    background-color: var(--hover-bg)
+}

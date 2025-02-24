@@ -1,0 +1,361 @@
+@font-face {
+    font-family: 'Montserrat';
+    src: url('./Montserrat-VariableFont_wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+}
+
+:root {
+    --body-bg: #121212;
+    --main-color: #1e1e1e;
+    --secondary-bg: #242424;
+    --text-color: #e0e0e0;
+    --accent-color: #bb86fc;
+    --hover-bg: #333333;
+    --border-color: #333333;
+    --button-bg: #3f3f3f;
+    --button-hover-bg: #4a4a4a;
+    --button-selected-bg: rgb(38, 124, 38);
+    --button-selected-hover-bg: rgb(49, 146, 49);
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+    font-family: 'Montserrat', sans-serif;
+    transition: all 0.1s;
+    transition-timing-function: ease-in-out;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.opacity-low {
+    opacity: 25%;
+}
+
+/* For index.html */
+.configure-menu-container {
+    display: flex;
+    flex-direction: row;
+    background-color: var(--body-bg);
+    width: 100%;
+    min-height: 85%;
+    max-height: 85%;
+}
+
+.menu-title {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 15px;
+    margin-top: 5px;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.configure-script-title-x {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px;
+    padding: 10px 15px;
+    background-color: var(--secondary-bg);
+    border-radius: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 20px;
+}
+
+.configure-script-title {
+    font-size: 20px;
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.config-x {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 30px;
+    font-size: 20px;
+    line-height: 1;
+    border: none;
+    background: var(--secondary-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+}
+
+.config-x:disabled {
+    cursor: default;
+}
+
+
+/* For html/configure.html */
+.configure-container {
+    background: var(--body-bg);
+    color: var(--text-color);
+    padding: 10px;
+    min-height: 100%;
+    width: 40%;
+    overflow: auto;
+}
+
+.configure-option {
+    margin: 10px;
+    display: flex;
+    margin-bottom: 15px;
+    background-color: var(--main-color);
+    border-radius: 0.5rem;
+}
+
+.configure-option-title {
+    min-height: 100%;
+    font-size: 15px;
+    font-weight: 500;
+    min-width: 100px;
+    padding: 10px;
+    background-color: var(--secondary-bg);
+    border-radius: 0.5rem 0 0 0.5rem;
+    text-align: center;
+}
+
+.configure-option-input,
+.configure-option-select {
+    width: 100%;
+    border-radius: 0 0.5rem 0.5rem 0;
+    background-color: var(--main-color);
+    border: 0;
+    color: var(--text-color);
+    padding: 10px;
+    font-size: 15px;
+    outline: 0;
+}
+
+.configure-option-input:focus,
+.configure-option-select:focus {
+    background-color: var(--hover-bg);
+}
+
+.chosen-switch-container {
+    display: flex;
+    flex-direction: row;
+    margin: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.chosen-switch {
+    background-color: var(--main-color);
+    font-size: 14px;
+    border-radius: 0.5rem;
+    max-width: 120px;
+    display: flex;
+    padding: 10px;
+}
+
+.chosen-switch-title {
+    width: 90%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chosen-switch-x {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-weight: bold;
+    background-color: var(--main-color);
+    color: var(--text-color);
+    border: 0;
+    padding: 0;
+    margin: auto;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.switch-button {
+    margin: 5px;
+    padding: 10px;
+    border-radius: 0.5rem;
+    border: none;
+    background-color: var(--button-bg);
+    color: var(--text-color);
+}
+
+.switch-button:hover {
+    background-color: var(--button-hover-bg);
+}
+
+
+/* For html/script-menu.html */
+.script-menu {
+    background-color: var(--secondary-bg);
+    display: inline-block;
+    min-height: 100%;
+    width: 60%;
+    padding: 10px;
+    border-bottom: solid 13px var(--secondary-bg);
+    border-radius: 0 0 0 0.5rem;
+    color: var(--text-color);
+    overflow: auto;
+}
+
+.script-item {
+    background-color: var(--main-color);
+    margin-bottom: 10px;
+    border-radius: 0.5rem;
+}
+
+.script-top-container {
+    display: flex;
+    width: 100%;
+}
+
+.script-title-location-container {
+    padding: 10px;
+    width: 100%;
+}
+
+.script-title {
+    font-size: 19px;
+    font-weight: 500;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.script-location {
+    margin-top: 4px;
+    font-size: 12px;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.script-reload {
+    width: fit-content;
+    height: 100%;
+    padding-top: 3px;
+    margin-right: 10px;
+    margin-top: auto;
+    margin-bottom: auto;
+    text-align: right;
+    border: 0;
+    display: block;
+    background-color: var(--main-color);
+    cursor: pointer;
+    border-radius: 0.5rem;
+}
+
+.script-reload:hover {
+    background-color: var(--secondary-bg)
+}
+
+.script-reload>svg {
+    fill: var(--body-bg);
+}
+
+.script-reload:disabled {
+    cursor: default;
+}
+
+.script-reload:disabled:hover {
+    background-color: var(--main-color);
+}
+
+.script-options {
+    display: flex;
+    background-color: var(--body-bg);
+    border-radius: 0 0 0.5rem 0.5rem;
+    gap: 10px;
+    padding: 10px;
+}
+
+.script-option {
+    border-radius: 0.5rem;
+    width: 100%;
+    font-size: 15px;
+    background-color: var(--secondary-bg);
+    border: none;
+    color: var(--text-color);
+    padding: 5px;
+    cursor: pointer;
+}
+
+.script-option:hover {
+    background-color: var(--border-color);
+}
+
+.script-selected {
+    background-color: var(--button-selected-bg);
+}
+
+.script-selected:hover {
+    background-color: var(--button-selected-hover-bg);
+}
+
+/* For html/options.html */
+.option-buttons-container {
+    background-color: var(--body-bg);
+    height: 15%;
+    max-height: 15%;
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+}
+
+.option-button {
+    width: 50%;
+    height: 100%;
+    border-radius: 0.5rem;
+    color: var(--text-color);
+    border: 0;
+    font-size: 20px;
+    background-color: var(--button-bg);
+    cursor: pointer;
+}
+
+.option-button:not(.opacity-low):hover {
+    background-color: var(--button-hover-bg);
+}
+
+.option-button-on {
+    background-color: var(--button-selected-bg);
+    cursor: default;
+}
+
+.option-button-on:not(.opacity-low):hover {
+    background-color: var(--button-selected-bg);
+}
+
+.option-button.opacity-low {
+    cursor: default;
+}
+
+.reload-spin {
+    animation: spin 2s linear infinite;
+    transform-origin: center;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
