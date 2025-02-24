@@ -43,6 +43,7 @@
         "commander": ">=12.1.0",
         "electron-squirrel-startup": "^1.0.1",
         "expr-eval": "^2.0.2",
+        "fs-extra": "^11.3.0",
         "prismjs": "^1.29.0"
     }
 }

@@ -3,29 +3,24 @@ const path = require('path')
 const started = require('electron-squirrel-startup')
 const asar = require("@electron/asar")
 
-const { spawn } = require('child_process')
-const fs = require('fs').promises
-const Compiler = require('./simkey/SimkeyCompiler.js')
+const { spawn, exec } = require('child_process')
+const fs = require('fs-extra')
 
 const scriptsPath = path.join(app.getPath('userData'), 'src', 'scripts.json')
 const keycFilesPath = path.join(app.getPath('userData'), 'src', 'keyc-files')
 const RunKeyCPath = path.join(app.getPath('userData'), 'src', 'resources', 'RunKeyC.exe')
+const simkeyPath = path.join(app.getPath('userData'), 'src', 'simkey', 'SimkeyCompiler.js')
+
+let Compiler
 
 const checkAndCreateDir = async (dirPath) => {
     await fs.mkdir(dirPath, { recursive: true })
 }
 
 (async () => {
-    await checkAndCreateDir(path.dirname(scriptsPath))
     await checkAndCreateDir(path.dirname(RunKeyCPath))
+    await checkAndCreateDir(path.dirname(scriptsPath))
     await checkAndCreateDir(keycFilesPath)
-
-    try {
-        await fs.access(RunKeyCPath)
-    } catch (err) {
-        const RunKeyCExe = asar.extractFile(app.getAppPath(), path.join("src", "resources", "RunKeyC.exe"))
-        await fs.writeFile(RunKeyCPath, RunKeyCExe)
-    }
 
     try {
         await fs.access(scriptsPath)
@@ -48,9 +43,52 @@ const checkAndCreateDir = async (dirPath) => {
             }
         }).catch((err) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts.\n${err}`))
     })
+
+    try {
+        await fs.access(simkeyPath)
+    } catch (err) {
+        const destPath = path.join(app.getPath('userData'), 'temp-src')
+
+        if (path.extname(app.getAppPath()).toLowerCase() !== ".asar") {
+            console.log("Simkey path should exist as this is for testing. Add simkey dir in userData and retry.")
+            return
+        }
+
+        asar.extractAll(app.getAppPath(), destPath)
+        const tempSimkeyPath = path.join(destPath, "src", "simkey")
+        await fs.move(tempSimkeyPath, path.dirname(simkeyPath))
+        
+        try {
+            await installSimkeyDependencies()
+            Compiler = require(simkeyPath);
+        } catch (err) {
+            dialog.showErrorBox("Installing dependencies failed", `Could not install depencies for Simkey. Delete your %appdata%/src directory and retry the installation.`)
+        }
+
+        await fs.remove(destPath)
+    }
+
+    try {
+        await fs.access(RunKeyCPath)
+    } catch (err) {
+        const RunKeyCExe = asar.extractFile(app.getAppPath(), path.join("src", "resources", "RunKeyC.exe"))
+        await fs.writeFile(RunKeyCPath, RunKeyCExe)   
+    }
+
+    Compiler = require(simkeyPath)
 })()
 
-// FIGURE THIS OUT LATER, ESPECIALLY RunKeyC.exe because that's the most important part
+function installSimkeyDependencies() {
+    return new Promise((resolve, reject) => {
+        exec('npm install', { cwd: path.dirname(simkeyPath) }, (err, stdout, stderr) => {
+            if (err) {
+                reject("Could not install dependencies." + err)
+                return
+            }
+            resolve(stdout)
+        })
+    })
+}
 
 let mainWindow
 let utilWindow
