@@ -1,5 +1,6 @@
 const ThrowError = require("../errors/ThrowError")
 const checkSection = require("../helpers/checkSection")
+const isEscaped = require("../helpers/isEscaped")
 
 // Gets an array from an array of tokens
 module.exports = (context, index, trimmed = true, searchArray = context.tokens) => {
@@ -21,7 +22,7 @@ module.exports = (context, index, trimmed = true, searchArray = context.tokens) 
             ThrowError(1005, { AT: token })
         }
 
-        if (token.endsWith("]")) {
+        if (token.endsWith("]") && !isEscaped(token, token.length - 1)) {
             // Deal with the fact tokens are trimmed (since space separates)
             string += (!trimmed ? " " : "") + token.substring(0, token.length - 1)
             break
