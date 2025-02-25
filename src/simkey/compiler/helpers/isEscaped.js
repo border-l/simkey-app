@@ -2,7 +2,7 @@
 module.exports = (string, index) => {
     let amount = 0
 
-    for (let i = index - 1; i > 0; i--) {
+    for (let i = index - 1; i >= 0; i--) {
         // Move on if not escape
         if (string.charAt(i) !== "\\") {
             break

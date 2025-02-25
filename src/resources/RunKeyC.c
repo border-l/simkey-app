@@ -98,7 +98,7 @@ KeyMap keyMap[] = {
     {"+", 10000 + VK_OEM_MINUS, 0},    // SHIFT + "-" yields "+"
     {"~", 10000 + VK_OEM_3, 0},         // SHIFT + "`" yields "~"
     {"{", 10000 + VK_OEM_4, 0},         // SHIFT + "[" yields "{"
-    {"}", 10000 + VK_OEM_5, 0},         // SHIFT + "]" yields "}"
+    {"}", 10000 + VK_OEM_6, 0},         // SHIFT + "]" yields "}"
     {"|", 10000 + VK_OEM_102, 0},       // SHIFT + "\" yields "|"
     {":", 10000 + VK_OEM_1, 0},         // SHIFT + ";" yields ":"
     {"\"", 10000 + VK_OEM_7, 0},        // SHIFT + "'" yields "\""
