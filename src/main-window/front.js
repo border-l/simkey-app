@@ -51,6 +51,7 @@ const components = {
         titleLocationContainer.classList.add("script-title-location-container")
 
         const titleDiv = document.createElement("div")
+        titleDiv.id = `script-title-${location}`
         titleDiv.classList.add("script-title")
         titleDiv.textContent = title
 
@@ -168,10 +169,11 @@ async function reloadScript(location) {
     scriptReload.disabled = true
 
     const result = await window.electron.reloadScript(location)
-    if (!result) {
+    if (!result[0]) {
         document.getElementById(`script-${location}`).remove()
         if (currentConfigure.location === location) {
             currentConfigure = {}
+            initialCurrentConfigure = {}
             setDisableConfig(true)
         }
         return
@@ -180,6 +182,7 @@ async function reloadScript(location) {
     setTimeout(() => {
         reloadSVG.classList.remove("reload-spin")
         scriptReload.disabled = false
+        document.getElementById(`script-title-${location}`).innerText = result[1]
     }, 200)
 }
 

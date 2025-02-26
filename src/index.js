@@ -226,15 +226,26 @@ ipcMain.handle('reload-script', async (event, location) => {
             addShortcut(script)
         }
 
+        let title = location.replaceAll("\\", "/")
+        title = title.slice(title.lastIndexOf("/") + 1)
+
+        let settingsTitle = compileFile.getSettings().name
+
+        if (settingsTitle !== "") {
+            title = settingsTitle
+        }
+
+        script.title = title
+
         await fs.writeFile(scriptsPath, JSON.stringify(scripts))
-        return true
+        return [true, title]
     }
     catch (err) {
         if (script.shortcut !== "NONE") globalShortcut.unregister(script.shortcut)
         delete scripts[location]
         await fs.writeFile(scriptsPath, JSON.stringify(scripts))
         dialog.showErrorBox("Reloaded Script Error", `There was an error when reloading the script (this is most likely from changes that cause Simkey errors). The script will now be deleted.\n${err}`)
-        return false
+        return [false]
     }
 })
 
