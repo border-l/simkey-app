@@ -8,6 +8,11 @@ function checkValidExpr(expression, boolean = false) {
         return false
     }
 
+    // This is sloppy, but it's a relatively unlikely issue
+    if (checkVariableName("$" + expression, true)) {
+        return false
+    }
+    
     // Look through matches with expr indices
     let match
     while ((match = /\$(\w+):\(/g.exec(expression)) !== null) {
