@@ -1,6 +1,6 @@
 # Simkey App
 
-The Simkey App allows you to conveniently run Simkey scripts.
+The Simkey App allows you to conveniently run Simkey scripts. Check out the documentation [available on our website](https://simkey.wiki) to learn the language.
 
 ## Using the Simkey App
 
