@@ -56,6 +56,8 @@ This time, we will configure a shortcut for ease of use. Go ahead and press `Sel
 
 To test this, go to a click speed test website, such as [CPSRace](https://www.cpsrace.com), and give it a go with the shortcut!
 
+**NOTE:** When setting a `shortcut` or adjusting the `repeat`, the app **automatically saves when you press enter or click off the input**. However, **when changing `modes` and `switches`, the script must be recompiled, so you must press `Save`**.
+
 ### Utilities (`Utils` Button)
 
 The final thing is the `Utils`. You can click the `Utils` button in the bottom right, and a window should open.
