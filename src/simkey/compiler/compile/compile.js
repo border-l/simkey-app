@@ -24,7 +24,7 @@ module.exports = (context, fileName) => {
     const instructionList = getInstructionList(context, context.model.MACRO, "MACRO")
 
     // Info for parsing sequences
-    let def = [0, 0]
+    let def = [100, 100]
     let code = "START"
     let heldKeys = []
 

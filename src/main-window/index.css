@@ -346,8 +346,19 @@ body {
     cursor: default;
 }
 
+#save-button > svg {
+    fill: white !important
+}
+
+#save-button {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
 .reload-spin {
-    animation: spin 2s linear infinite;
+    animation: spin 0.75s linear infinite;
     transform-origin: center;
 }
 

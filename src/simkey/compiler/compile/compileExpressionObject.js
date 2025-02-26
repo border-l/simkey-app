@@ -56,26 +56,10 @@ module.exports = (expression, heldKeys, def) => {
         }
 
         code += "\np" + key
-
-        // Release instantly if no hold
-        if (hold === 0) {
-            code += "\nr" + key
-        }
-    }
-
-    // No hold, nothing to be released
-    if (hold === 0) {
-        // Release all held keys to be released
-        for (const key of releaseLater) {
-            heldKeys.splice(heldKeys.indexOf(key), 1)
-            code += "\nr" + key
-        }
-
-        return code + (wait > 0 ? "\nw" + wait : '')
     }
 
     // Hold for period
-    code += "\nw" + hold
+    code += hold > 0 ? "\nw" + hold : ""
 
     // Release all pressed keys
     for (const key of expression.keysPressed) {

@@ -11,6 +11,29 @@ const keycFilesPath = path.join(app.getPath('userData'), 'src', 'keyc-files')
 const RunKeyCPath = path.join(app.getPath('userData'), 'src', 'resources', 'RunKeyC.exe')
 const simkeyPath = path.join(app.getPath('userData'), 'src', 'simkey', 'SimkeyCompiler.js')
 
+const createWindow = () => {
+    mainWindow = new BrowserWindow({
+        height: 600,
+        width: 800,
+        minHeight: 600,
+        minWidth: 800,
+        maxHeight: 600,
+        maxWidth: 800,
+        backgroundColor: '#121212',
+        show: false,
+        webPreferences: {
+            preload: path.join(__dirname, 'mainPreload.js')
+        },
+    })
+
+    mainWindow.loadFile(path.join(__dirname, './main-window/index.html'))
+    mainWindow.setMenuBarVisibility(null)
+
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show()
+    })
+}
+
 let Compiler
 
 const checkAndCreateDir = async (dirPath) => {
@@ -18,16 +41,6 @@ const checkAndCreateDir = async (dirPath) => {
 }
 
 (async () => {
-    await checkAndCreateDir(path.dirname(RunKeyCPath))
-    await checkAndCreateDir(path.dirname(scriptsPath))
-    await checkAndCreateDir(keycFilesPath)
-
-    try {
-        await fs.access(scriptsPath)
-    } catch (err) {
-        await fs.writeFile(scriptsPath, JSON.stringify({}, null, 2))
-    }
-
     app.whenReady().then(() => {
         createWindow()
     
@@ -36,13 +49,23 @@ const checkAndCreateDir = async (dirPath) => {
                 createWindow()
             }
         })
-    
+    })
+
+    await checkAndCreateDir(path.dirname(RunKeyCPath))
+    await checkAndCreateDir(path.dirname(scriptsPath))
+    await checkAndCreateDir(keycFilesPath)
+
+    try {
+        await fs.access(scriptsPath)
+
         fs.readFile(scriptsPath, "utf-8").then(data => JSON.parse(data)).then(scripts => {
             for (const script in scripts) {
                 addShortcut(scripts[script])
             }
         }).catch((err) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts.\n${err}`))
-    })
+    } catch (err) {
+        await fs.writeFile(scriptsPath, JSON.stringify({}, null, 2))
+    }
 
     try {
         await fs.access(simkeyPath)
@@ -97,23 +120,6 @@ let cursorListener
 
 if (started) {
     app.quit()
-}
-
-const createWindow = () => {
-    mainWindow = new BrowserWindow({
-        height: 600,
-        width: 800,
-        minHeight: 600,
-        minWidth: 800,
-        maxHeight: 600,
-        maxWidth: 800,
-        webPreferences: {
-            preload: path.join(__dirname, 'mainPreload.js')
-        },
-    })
-
-    mainWindow.loadFile(path.join(__dirname, './main-window/index.html'))
-    mainWindow.setMenuBarVisibility(null)
 }
 
 
@@ -233,7 +239,7 @@ ipcMain.handle('reload-script', async (event, location) => {
 })
 
 
-ipcMain.handle('save-script', async (event, location, options) => {
+ipcMain.handle('save-script', async (event, location, options, forceRecompile = true) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
 
     if (options.shortcut !== "NONE" && scripts?.[location]?.shortcut !== options.shortcut) {
@@ -256,9 +262,6 @@ ipcMain.handle('save-script', async (event, location, options) => {
     if (options.shortcut !== "NONE") {
         globalShortcut.unregister(options.shortcut)
     }
-    else if (scripts?.[location]?.shortcut && scripts?.[location]?.shortcut !== "NONE") {
-        globalShortcut.unregister(scripts[location].shortcut)
-    }
 
     if (isNaN(options.repeat) && options.repeat !== "OFF" && options.repeat !== "ON") {
         dialog.showErrorBox("Invalid Repeat Value", `${options.repeat} is an invalid repeat value. Choose a positive whole number, "OFF", or "ON".`)
@@ -268,6 +271,23 @@ ipcMain.handle('save-script', async (event, location, options) => {
         dialog.showErrorBox("Invalid Repeat Value", `${options.repeat} is an invalid repeat value. Choose a positive whole number, "OFF", or "ON".`)
         return false
     }
+
+    if (scripts?.[location]?.shortcut && scripts?.[location]?.shortcut !== "NONE") {
+        globalShortcut.unregister(scripts[location].shortcut)
+    }
+
+    if (options.mode === scripts?.[location]?.mode && JSON.stringify(options.switches) === JSON.stringify(scripts?.[location]?.switches) && !forceRecompile) {
+        scripts[location].shortcut = options.shortcut
+        scripts[location].repeat = options.repeat
+        addShortcut(scripts[location])
+
+        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+        return true
+    }
+
+    console.log(forceRecompile)
+
+    const originalScriptInfo = JSON.parse(JSON.stringify(scripts[location]))
 
     try {
         await fs.rm(path.join(keycFilesPath, scripts[location].keyc), { force: true })
@@ -286,6 +306,7 @@ ipcMain.handle('save-script', async (event, location, options) => {
     }
     catch (err) {
         dialog.showErrorBox("An Error Occured", `Error while trying to load script in ${location} (it contains an error, or error while loading or writing to a file).\n${err}`)
+        addShortcut(originalScriptInfo)
         return false
     }
 })

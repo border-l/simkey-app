@@ -146,6 +146,7 @@ configExit.addEventListener('click', () => setDisableConfig(true))
 
 // Keep track of what is currently being configured
 let currentConfigure = {}
+let initialCurrentConfigure = {}
 
 
 // Listen to scripts running and exiting
@@ -159,6 +160,13 @@ async function reloadScript(location) {
     if (currentConfigure.location === location) {
         setDisableConfig(true)
     }
+
+    const scriptReload = document.getElementById(`script-reload-${location}`)
+    const reloadSVG = document.getElementById(`reload-svg-${location}`)
+
+    reloadSVG.classList.add("reload-spin")
+    scriptReload.disabled = true
+
     const result = await window.electron.reloadScript(location)
     if (!result) {
         document.getElementById(`script-${location}`).remove()
@@ -169,15 +177,10 @@ async function reloadScript(location) {
         return
     }
 
-    const scriptReload = document.getElementById(`script-reload-${location}`)
-    const reloadSVG = document.getElementById(`reload-svg-${location}`)
-    reloadSVG.classList.add("reload-spin")
-    scriptReload.disabled = true
-
     setTimeout(() => {
         reloadSVG.classList.remove("reload-spin")
         scriptReload.disabled = false
-    }, 2000)
+    }, 200)
 }
 
 function removeSwitch(name) {
@@ -211,6 +214,8 @@ async function configureScript(location) {
     currentConfigure = currentOptions
     currentConfigure.location = location
 
+    initialCurrentConfigure = JSON.parse(JSON.stringify(currentConfigure))
+
     toggleSelected(location, true)
 }
 
@@ -220,6 +225,7 @@ async function removeScript(location) {
             document.getElementById(`script-${location}`).remove()
             if (currentConfigure.location === location) {
                 currentConfigure = {}
+                initialCurrentConfigure = {}
                 setDisableConfig(true)
             }
         }
@@ -247,17 +253,36 @@ function handleSelectModeChange() {
 }
 
 function handleShortcutInput() {
+    let changed = false
+
     if (configShortcut.value === "" || configShortcut.value === "NONE") {
-        currentConfigure.shortcut = "NONE"
+        if (currentConfigure.shortcut !== "NONE") {
+            currentConfigure.shortcut = "NONE"
+            changed = true
+        }
         configShortcut.value = ""
     }
-    else {
+    else if (currentConfigure.shortcut !== configShortcut.value) {
         currentConfigure.shortcut = configShortcut.value
+        changed = true
+    }
+
+    if (sameKeyValuePairs(currentConfigure, initialCurrentConfigure, "shortcut") && initialCurrentConfigure.shortcut !== configShortcut.value && changed) {
+        handleSaveButton(false)
     }
 }
 
 function handleRepeatInput() {
-    currentConfigure.repeat = configRepeat.value
+    changed = false
+
+    if (currentConfigure.repeat !== configRepeat.value) {
+        currentConfigure.repeat = configRepeat.value
+        changed = true
+    }
+
+    if (sameKeyValuePairs(currentConfigure, initialCurrentConfigure, "repeat") && changed && initialCurrentConfigure.repeat !== configRepeat.value) {
+        handleSaveButton(false)
+    }
 }
 
 async function handleLoadButton() {
@@ -268,20 +293,32 @@ async function handleLoadButton() {
     scriptMenu.append(scriptItem)
 }
 
-async function handleSaveButton() {
+async function handleSaveButton(forceRecompile = true) {
     const { location, ...configuration } = currentConfigure
-    const saved = await window.electron.saveScript(location, configuration)
-    if (!saved) return
 
-    saveButton.innerText = "💾 Saved"
-    saveButton.classList.add("option-button-on")
+    saveButton.innerText = "💾 Saving"
+    saveButton.innerHTML += ` <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="20px" height="20px" viewBox="0 0 120 120" class="reload-spin" id="save-button-reload"><g><path d="M60,95.5c-19.575,0-35.5-15.926-35.5-35.5c0-19.575,15.925-35.5,35.5-35.5c13.62,0,25.467,7.714,31.418,19h22.627   C106.984,20.347,85.462,3.5,60,3.5C28.796,3.5,3.5,28.796,3.5,60c0,31.203,25.296,56.5,56.5,56.5   c16.264,0,30.911-6.882,41.221-17.88L85.889,84.255C79.406,91.168,70.201,95.5,60,95.5z"/></g><line x1="120" y1="0" x2="120" y2="45.336"/><line x1="91.418" y1="43.5" x2="114.045" y2="43.5"/><polygon points="120,21.832 119.992,68.842 74.827,55.811 "/></svg>`
     saveButton.disabled = true
 
-    setTimeout(() => {
-        saveButton.innerText = "💾 Save"
-        saveButton.classList.remove("option-button-on")
+    const saved = await window.electron.saveScript(location, configuration, forceRecompile)
+    if (!saved) {
+        saveButton.innerHTML = "💾 Save"
         saveButton.disabled = false
-    }, 500)
+        return
+    }
+
+    setTimeout(() => {
+        saveButton.classList.add("option-button-on")
+        saveButton.innerHTML = "💾 Saved"
+
+        setTimeout(() => {
+            saveButton.innerHTML = "💾 Save"
+            saveButton.classList.remove("option-button-on")
+            saveButton.disabled = false
+        }, 750)
+    }, 250)
+
+    initialCurrentConfigure = JSON.parse(JSON.stringify(currentConfigure))
 }
 
 async function handleRunButton() {
@@ -320,6 +357,7 @@ function setDisableConfig(disable) {
         currentConfigure.location ? toggleSelected(currentConfigure.location, false) : 0
         configScriptTitle.innerText = "No script selected"
         currentConfigure = {}
+        initialCurrentConfigure = {}
     }
 }
 
@@ -351,4 +389,12 @@ function toggleSelected(location, selected) {
     const prevSelectButton = document.getElementById(`script-select-${location}`)
     prevSelectButton.innerText = selected ? "✨ Selected" : "✨ Select"
     selected ? prevSelectButton.classList.add("script-selected") : prevSelectButton.classList.remove("script-selected")
+}
+
+function sameKeyValuePairs(obj1, obj2, excludedKey) {
+    for (const key in obj1) {
+        if (!obj2[key]) return false
+        if (key !== excludedKey && JSON.stringify(obj2[key]) !== JSON.stringify(obj1[key])) return false
+    }
+    return true
 }
