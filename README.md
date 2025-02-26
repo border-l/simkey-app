@@ -63,3 +63,7 @@ To test this, go to a click speed test website, such as [CPSRace](https://www.cp
 The final thing is the `Utils`. You can click the `Utils` button in the bottom right, and a window should open.
 
 This currently only has one button which you can click to track where your mouse goes. By pressing enter while not having clicked off the `Utilities` window, you can click the button and have it stop to record where your cursor was (can be helpful for `@cursor`). We plan to add more helpful `utilities` later on.
+
+### Setting Up Highlighting
+
+If you use VS Code, you can download the `Simkey Highlighter` extension from the marketplace. You can also visit the [simkey-vscode GitHub repository to download releases from there](https://github.com/border-l/simkey-vscode).
