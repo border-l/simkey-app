@@ -1,5 +1,6 @@
 {
     "MissingEndString": 1000,
+    "MissingStartString": 1001,
     "MissingArrayEnd": 1005,
     "MissingArrayStart": 1010,
     "MissingBracketBlock": 1015,

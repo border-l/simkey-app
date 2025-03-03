@@ -12,7 +12,7 @@ function checkValidExpr(expression, boolean = false) {
     if (checkVariableName("$" + expression, true)) {
         return false
     }
-    
+
     // Look through matches with expr indices
     let match
     while ((match = /\$(\w+):\(/g.exec(expression)) !== null) {

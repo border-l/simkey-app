@@ -3,6 +3,7 @@ const CODE = require("../Codes")[ERROR]
 
 const FORMAT = {
     MissingEndString: ({ AT }) => `No ending \`"\`. AT: ${AT}`,
+    MissingStartString: ({ AT }) => `No start to string \`"\`. AT: ${AT}`,
     MissingArrayEnd: ({ AT }) => `No ending \`]\`. AT: ${AT}`,
     MissingArrayStart: ({ AT }) => `No starting \`[\`. AT: ${AT}`,
     MissingBracketBlock: ({ AT }) => `No closing bracket or end to section found. AT: ${AT}`, // parseInnards "appropriate end"

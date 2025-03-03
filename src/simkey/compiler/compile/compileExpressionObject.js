@@ -22,7 +22,7 @@ module.exports = (expression, heldKeys, def) => {
     }
     
     // Simple wait expression
-    if (expression.keysHeld.length === 0 && expression.keysPressed === 0 && expression.wait === 'DEF') { 
+    if (expression.keysHeld.length === 0 && expression.keysPressed.length === 0 && expression.wait === 'DEF') { 
         return "\nw" + hold
     }
 

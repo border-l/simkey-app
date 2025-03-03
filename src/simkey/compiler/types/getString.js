@@ -3,7 +3,7 @@ const checkSection = require("../helpers/checkSection")
 const backCheck = require("../helpers/backCheck")
 
 // Get string from array of tokens and index
-module.exports = (context, index, searchArray = context.tokens) => {
+module.exports = (context, index, searchArray = context.tokens, mustStart = false) => {
     // return string
     let string = ""
 
@@ -18,9 +18,15 @@ module.exports = (context, index, searchArray = context.tokens) => {
     for (; i < searchArray.length; i++) {
         let token = searchArray[i]
 
-        // Look past first " if it is there
+        // Look past first " if it is there (DONT KNOW WHY IT WAS MADE LIKE THIS, CHANGING IT CAUSED ERRORS)
         if (i === index && token.charAt(0) === "\"") {
             token = token.substring(1)
+        }
+        else if (i === index && token.trim().charAt(0) === "\"") {
+            token = token.substring(token.indexOf("\"") + 1)
+        }
+        else if (i === index && mustStart) {
+            ThrowError(1001, { AT: token })
         }
 
         // If section token then no end to string (an argument for searchArray that isnt #tokens means no section tokens)

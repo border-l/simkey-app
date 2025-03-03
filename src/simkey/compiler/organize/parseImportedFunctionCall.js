@@ -111,7 +111,7 @@ module.exports = (context, token, parsed, i, parseInnards, section) => {
             if (expected === "STR") {
                 // Try to get the string, if error, not a string
                 try {
-                    const [string, finalIndex] = getString(context, x, value)
+                    const [string, finalIndex] = getString(context, x, value, true)
                     finalArray.push(string)
                     x = finalIndex
                     break
