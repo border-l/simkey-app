@@ -28,12 +28,12 @@ KeyMap keyMap[] = {
     {"MB_RIGHT", MOUSEEVENTF_RIGHTDOWN, 1}, {"MB_MIDDLE", MOUSEEVENTF_MIDDLEDOWN, 1}, 
     {"!", 10000 + '1', 0}, {"@", 10000 + '2', 0}, {"#", 10000 + '3', 0}, {"$", 10000 + '4', 0}, 
     {"%", 10000 + '5', 0}, {"^", 10000 + '6', 0}, {"&", 10000 + '7', 0}, {"*", 10000 + '8', 0}, 
-    {"(", 10000 + '9', 0}, {")", 10000 + '0', 0}, {"_", 10000 + VK_OEM_PLUS, 0}, 
-    {"+", 10000 + VK_OEM_MINUS, 0}, {"~", 10000 + VK_OEM_3, 0}, {"{", 10000 + VK_OEM_4, 0}, 
+    {"(", 10000 + '9', 0}, {")", 10000 + '0', 0}, {"_", 10000 + VK_OEM_MINUS, 0}, 
+    {"+", 10000 + VK_OEM_PLUS, 0}, {"~", 10000 + VK_OEM_3, 0}, {"{", 10000 + VK_OEM_4, 0}, 
     {"}", 10000 + VK_OEM_6, 0}, {"|", 10000 + VK_OEM_102, 0}, {":", 10000 + VK_OEM_1, 0}, 
     {"\"", 10000 + VK_OEM_7, 0}, {"<", 10000 + VK_OEM_COMMA, 0}, {">", 10000 + VK_OEM_PERIOD, 0}, 
     {"?", 10000 + VK_OEM_2, 0}, {"=", VK_OEM_PLUS, 0}, {"-", VK_OEM_MINUS, 0}, {"`", VK_OEM_3, 0}, 
-    {"[", VK_OEM_4, 0}, {"]", VK_OEM_5, 0}, {"\\", VK_OEM_102, 0}, {";", VK_OEM_1, 0}, 
+    {"[", VK_OEM_4, 0}, {"]", VK_OEM_6, 0}, {"\\", VK_OEM_5, 0}, {";", VK_OEM_1, 0}, 
     {"'", VK_OEM_7, 0}, {",", VK_OEM_COMMA, 0}, {".", VK_OEM_PERIOD, 0}, {"/", VK_OEM_2, 0}, 
     {"CMD", VK_LWIN, 0}, {"WIN", VK_LWIN, 0}, {"CAPS", VK_CAPITAL, 0}, {"TAB", VK_TAB, 0}, 
     {"LIST", VK_APPS, 0}, {"END", VK_END, 0}, {"PRNTSCR", VK_SNAPSHOT, 0}, {"SCRL_LOCK", VK_SCROLL, 0}, 
@@ -125,7 +125,7 @@ int releaseKey(const char* key, int *isShiftDown) {
 
         keybd_event(code, 0, KEYEVENTF_KEYUP, 0);
 
-        if (strcmp(key, "SHIFT")) {
+        if (strcmp(key, "SHIFT") == 0) {
             *isShiftDown = 0;
         }
         else if (prefix == 1 && !*isShiftDown) {
@@ -191,6 +191,11 @@ void parseAndRun(const char* filename, int repeat) {
                     printf("Invalid command: %c\n", command);
                     exitError("", file);
             }
+        }
+
+        if (isShiftDown) {
+            keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
+            isShiftDown = 0;
         }
 
         loopCount++;

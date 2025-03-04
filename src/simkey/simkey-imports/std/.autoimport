@@ -12,6 +12,5 @@
 @print ./print
 @e ./e
 @setBool ./setBool
-@printINFO ./printINFO
 @scroll ./scroll
 @type ./type
