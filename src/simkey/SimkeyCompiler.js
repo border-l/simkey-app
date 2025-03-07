@@ -3,12 +3,14 @@ const tokenize = require("./compiler/organize/tokenize")
 
 const clearComments = require("./compiler/organize/clearComments")
 
+const parseVectors = require('./compiler/sections/parseVectors')
 const parseImports = require("./compiler/sections/parseImports")
 const parseSettings = require("./compiler/sections/parseSettings")
 const parseModesAndSwitches = require("./compiler/sections/parseModesAndSwitches")
 
 const compile = require("./compiler/compile/compile")
 const setSettings = require("./compiler/compile/setSettings")
+const setInputVectors = require('./compiler/compile/setInputVectors')
 
 const fs = require("fs")
 
@@ -18,6 +20,9 @@ class Compiler {
     #tokens
     #model
     #builtIn
+
+    // New, for inputting vectors
+    #inputVectors
 
     #fileName
 
@@ -34,6 +39,7 @@ class Compiler {
         this.#tokens = []
         this.#builtIn = ["@goto", "@end", "@if", "@elseif", "@else"]
         this.#checkLater = []
+        this.#inputVectors = {}
         this.#model = {
             "IMPORTS": {},
             "SETTINGS": {
@@ -61,6 +67,7 @@ class Compiler {
         parseModesAndSwitches(this.#context)
         parseImports(this.#context)
         parseSettings(this.#context)
+        parseVectors(this.#context)
         
         // Imported function to scan over document and parse before this handling
         if (this.#model.IMPORTS["CALL.BEFORE"]) {
@@ -86,6 +93,9 @@ class Compiler {
                     case 'checkLater':
                         this.#checkLater = set
                         break
+                    case 'inputVectors':
+                        this.#inputVectors = set
+                        break
                     case 'model':
                         this.#model = set
                         break
@@ -108,7 +118,8 @@ class Compiler {
         this.#context.builtIn = this.#builtIn
         this.#context.checkLater = this.#checkLater,
         this.#context.model = this.#model
-        this.#context.settings = this.#settings
+        this.#context.settings = this.#settings,
+        this.#context.inputVectors = this.#inputVectors
     }
 
     compile(fileName) {
@@ -119,9 +130,17 @@ class Compiler {
         setSettings(this.#context, object)
     }
 
+    setInputVectors(object) {
+        setInputVectors(this.#context, object)
+    }
+
+    getInputVectors() {
+        return JSON.parse(JSON.stringify(this.#inputVectors))
+    }
+
     // Modes
     getModes() {
-        return this.#model.MODES
+        return JSON.parse(JSON.stringify(this.#model.MODES))
     }
 
     // Switches

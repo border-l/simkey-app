@@ -18,7 +18,7 @@
             "target": [
                 "nsis"
             ],
-            "requestedExecutionLevel": "requireAdministrator"
+            "icon": "src/assets/main_logo.png"
         }
     },
     "devDependencies": {

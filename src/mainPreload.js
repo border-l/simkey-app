@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld('electron', {
     openScript: (location) => ipcRenderer.invoke("open-script", location),
     runStopScript: (location) => ipcRenderer.invoke("run-stop-script", location),
     runListener: (callback) => ipcRenderer.on('run-message', callback),
-    openUtils: () => ipcRenderer.invoke("open-utilities-window")
+    openUtils: () => ipcRenderer.invoke("open-utilities-window"),
+    sendMessage: (msg) => ipcRenderer.invoke("send-message", msg)
 })

@@ -7,6 +7,7 @@ const selectSwitches = document.getElementById("select-switches")
 const chosenSwitches = document.getElementById("chosen-switches")
 const configScriptTitle = document.getElementById("script-title")
 const configExit = document.getElementById("config-x")
+const configInputVectors = document.getElementById("config-vectors")
 
 
 // Option buttons and script menu
@@ -107,6 +108,27 @@ const components = {
         option.value = value
         option.textContent = text ? text : value
         return option
+    },
+
+    /* MAKE THIS LOOK BETTER */
+    vectorInput: (name, value) => {
+        const container = document.createElement("div")
+        container.classList.add("configure-option")
+
+        const title = document.createElement("div")
+        title.classList.add("configure-option-title")
+        title.textContent = name
+
+        const input = document.createElement("input")
+        input.classList.add("configure-option-input")
+        input.value = value
+        input.id = `vector-input-${name}`
+        input.addEventListener('focusout', handleVectorInput.bind(null, name))
+
+        container.appendChild(title)
+        container.appendChild(input)
+
+        return container
     }
 }
 
@@ -207,6 +229,7 @@ async function configureScript(location) {
     setDisableConfig(false)
     setOptions(currentOptions.modeOptions, currentOptions.switchOptions.filter((val) => !currentOptions.switches.includes(val)))
     addSwitches(currentOptions.switches)
+    handleLoadInputVectors(currentOptions.inputVectors)
 
     configScriptTitle.innerText = currentOptions.title
 
@@ -350,6 +373,7 @@ function setDisableConfig(disable) {
         saveButton.classList.remove("opacity-low")
     }
     else {
+        configInputVectors.classList.add("hidden")
         configPanel.classList.add("opacity-low")
         runButton.classList.add("opacity-low")
         saveButton.classList.add("opacity-low")
@@ -357,6 +381,7 @@ function setDisableConfig(disable) {
         configRepeat.value = "OFF"
         setOptions(["$DEFAULT"], [])
         addSwitches([])
+        handleLoadInputVectors({})
         currentConfigure.location ? toggleSelected(currentConfigure.location, false) : 0
         configScriptTitle.innerText = "No script selected"
         currentConfigure = {}
@@ -386,6 +411,35 @@ function addSwitches(switches) {
         const switchElement = components.chosenSwitch(switsh)
         chosenSwitches.append(switchElement)
     }
+}
+
+function handleLoadInputVectors(inputVectors) {
+    if (Object.keys(inputVectors).length === 0) return
+    configInputVectors.classList.remove("hidden")
+    configInputVectors.innerHTML = ""
+
+    for (const vector in inputVectors) {
+        const vectorInput = components.vectorInput(vector, inputVectors[vector].join(", "))
+        configInputVectors.append(vectorInput)
+    }
+}
+
+async function handleVectorInput(name) {
+    let value = document.getElementById(`vector-input-${name}`).value
+    value = value.split(",").map(val => Number(val.trim()))
+
+    if (value.some(val => isNaN(val))) {
+        await window.electron.sendMessage("You inputted an invalid number. Try again.")
+        return
+    }
+
+    const currentValue = currentConfigure.inputVectors[name]
+    
+    if (value.length !== currentValue.length) {
+        await window.electron.sendMessage(`You must match the original length of the vector. Try again with ${currentValue.length} number(s).`)
+    }
+
+    currentConfigure.inputVectors[name] = value
 }
 
 function toggleSelected(location, selected) {

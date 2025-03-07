@@ -14,3 +14,4 @@
 @setBool ./setBool
 @scroll ./scroll
 @type ./type
+@exit ./exit

@@ -14,7 +14,11 @@ const FORMAT = {
     InstructionIllegal: ({ AT, CONTEXT }) => `Invalid instruction present. AT: ${AT}, CONTEXT: ${CONTEXT}`, // Honestly not entirely sure, but it's in getInstructionList
     InstructionMissingArguments: ({ AT }) => `Instruction for imported function call is missing arguments. AT: ${AT}`,
 
-    UnknownPropertySet: ({ AT }) => `Attempted to set unknown property in context (Internal Compiler Error). PROPERTY: ${AT}`
+    UnknownPropertySet: ({ AT }) => `Attempted to set unknown property in context (Internal Compiler Error). PROPERTY: ${AT}`,
+
+    InputVectorNonExistent: ({ AT }) => `Attempted to input a vector that does not exist. AT: ${AT}`,
+    InputVectorNonArray: ({ AT }) => `Attempted to set an input vector to a non-array. AT: ${AT}`,
+    InputVectorInvalidArray: ({ AT }) => `Invalid array given to set input vector (invalid length, or contains non-numbers). AT: ${AT}`
 }
 
 module.exports = { ERROR, CODE, FORMAT }

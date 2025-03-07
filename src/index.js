@@ -13,14 +13,15 @@ const simkeyPath = path.join(app.getPath('userData'), 'src', 'simkey', 'SimkeyCo
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({
-        height: 600,
+        height: 615,
         width: 800,
-        minHeight: 600,
+        minHeight: 615,
         minWidth: 800,
-        maxHeight: 600,
+        maxHeight: 615,
         maxWidth: 800,
         backgroundColor: '#121212',
         show: false,
+        icon: path.join(__dirname, 'assets/main_logo.png'),
         webPreferences: {
             preload: path.join(__dirname, 'mainPreload.js')
         },
@@ -175,6 +176,7 @@ ipcMain.handle('load-new-script', async () => {
         scriptInfo.switches = switches
         scriptInfo.mode = mode
         scriptInfo.keyc = getKEYCName(scripts)
+        scriptInfo.inputVectors = compileFile.getInputVectors()
 
         compileFile.setSettings(getSettingsObject(scriptInfo))
         compileFile.compile(path.join(keycFilesPath, scriptInfo.keyc))
@@ -219,6 +221,17 @@ ipcMain.handle('reload-script', async (event, location) => {
 
         script.keyc = getKEYCName(scripts)
         compileFile.setSettings(getSettingsObject(script))
+
+        const inputVectors = compileFile.getInputVectors()
+        for (const inputVec in inputVectors) {
+            if (!script.inputVectors[inputVec]) script.inputVectors[inputVec] = inputVectors[inputVec]
+        }
+        for (const inputVec in script.inputVectors) {
+            if (!inputVectors[inputVec]) delete script.inputVectors[inputVec]
+            else if (inputVectors[inputVec].length !== script.inputVectors[inputVec].length) script.inputVectors[inputVec] = inputVectors[inputVec]
+        }
+        
+        compileFile.setInputVectors(script.inputVectors)
         compileFile.compile(path.join(keycFilesPath, script.keyc))
 
         if (script.shortcut !== "NONE") {
@@ -296,8 +309,6 @@ ipcMain.handle('save-script', async (event, location, options, forceRecompile = 
         return true
     }
 
-    console.log(forceRecompile)
-
     const originalScriptInfo = JSON.parse(JSON.stringify(scripts[location]))
 
     try {
@@ -305,6 +316,7 @@ ipcMain.handle('save-script', async (event, location, options, forceRecompile = 
 
         const compileFile = new Compiler(location)
         compileFile.setSettings(getSettingsObject(options))
+        compileFile.setInputVectors(options.inputVectors)
 
         options.keyc = getKEYCName(scripts)
         compileFile.compile(path.join(keycFilesPath, options.keyc))
@@ -376,6 +388,7 @@ ipcMain.handle('open-utilities-window', async (event) => {
         minWidth: 800,
         maxHeight: 150,
         maxWidth: 800,
+        icon: path.join(__dirname, 'assets/main_logo.png'),
         webPreferences: {
             preload: path.join(__dirname, 'utilsPreload.js')
         },
@@ -398,11 +411,17 @@ ipcMain.handle('listen-cursor', async (event, switchOn) => {
         cursorListener = null
     }
     else if (switchOn) {
+        clearInterval(cursorListener)
         cursorListener = setInterval(() => {
             const mousePos = screen.getCursorScreenPoint()
             utilWindow.webContents.send("cursor-update", mousePos)
         }, 50)
     }
+})
+
+
+ipcMain.handle('send-message', async (event, message) => {
+    dialog.showMessageBox({ message: message, buttons: ["OK"] })
 })
 
 

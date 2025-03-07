@@ -27,44 +27,8 @@ module.exports = (context) => {
         }
 
         // Skipped as other functions handle them later on
-        else if (section === "IMPORTS" || section === "SETTINGS" || section === "MODES" || section === "SWITCHES") {
+        else if (section === "IMPORTS" || section === "SETTINGS" || section === "MODES" || section === "SWITCHES" || section === "VECTORS") {
             continue
-        }
-
-        // Handle vector declarations
-        else if (section === "VECTORS") {
-            // Check the variable name is valid
-            if (!checkVariableName(token)) {
-                ThrowError(1100, { AT: token })
-            }
-
-            // Get assignment
-            const [assignment, index] = combineTillNext(context, "$", i, false, true)
-            // Error if assignment operator is not present where it should be
-            if (assignment.charAt(0) !== "=" || context.tokens[i + 1] !== "=") {
-                ThrowError(1600, { AT: token, SECTION: "VECTORS" })
-            }
-
-            // Get numbers in vector
-            const numbers = assignment.replace("=", "").split(",").map((val) => val.length === 0 ? 0 : Number(val))
-            // Error if there are no numbers
-            if (numbers.length === 0) {
-                ThrowError(2400, { AT: token })
-            }
-
-            // Error if invalid number present
-            if (numbers.some((val) => isNaN(val))) {
-                ThrowError(2405, { AT: token })
-            }
-            // Assume other value is 0 if only one number
-            if (numbers.length === 1) {
-                context.model.VECTORS[token] = [numbers[0], 0]
-                i = index - 1
-                continue
-            }
-            // Update & move past assignment
-            context.model.VECTORS[token] = numbers
-            i = index - 1
         }
         
         // Handle function section
