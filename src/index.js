@@ -23,7 +23,8 @@ const createWindow = () => {
         show: false,
         icon: path.join(__dirname, 'assets/main_logo.png'),
         webPreferences: {
-            preload: path.join(__dirname, 'mainPreload.js')
+            preload: path.join(__dirname, 'mainPreload.js'),
+            devTools: false
         },
     })
 
@@ -390,7 +391,8 @@ ipcMain.handle('open-utilities-window', async (event) => {
         maxWidth: 800,
         icon: path.join(__dirname, 'assets/main_logo.png'),
         webPreferences: {
-            preload: path.join(__dirname, 'utilsPreload.js')
+            preload: path.join(__dirname, 'utilsPreload.js'),
+            devTools: false
         },
     })
 
