@@ -1,6 +1,7 @@
 const combineTillNext = require("../helpers/combineTillNext")
 const findBracket = require("../helpers/findBracket")
 const parseConditionExpression = require("./parseConditionExpression")
+const ThrowError = require("../errors/ThrowError")
 
 // Parses conditional models, using #parseConditionExpression for expressions
 function parseConditional (context, index, section, parseInnards) {

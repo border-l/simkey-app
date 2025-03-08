@@ -12,6 +12,8 @@ const compile = require("./compiler/compile/compile")
 const setSettings = require("./compiler/compile/setSettings")
 const setInputVectors = require('./compiler/compile/setInputVectors')
 
+const ThrowError = require("./compiler/errors/ThrowError")
+
 const fs = require("fs")
 
 class Compiler {
