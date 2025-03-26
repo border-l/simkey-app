@@ -25,7 +25,7 @@ KeyMap keyMap[] = {
     {"0", '0', 0}, {"ENTER", VK_RETURN, 0}, {"SHIFT", VK_SHIFT, 0}, {"CTRL", VK_CONTROL, 0}, 
     {"ALT", VK_MENU, 0}, {"SPACE", VK_SPACE, 0}, {"ESC", VK_ESCAPE, 0}, {"LEFT", VK_LEFT, 0}, 
     {"RIGHT", VK_RIGHT, 0}, {"UP", VK_UP, 0}, {"DOWN", VK_DOWN, 0}, {"MB_LEFT", MOUSEEVENTF_LEFTDOWN, 1}, 
-    {"MB_RIGHT", MOUSEEVENTF_RIGHTDOWN, 1}, {"MB_MIDDLE", MOUSEEVENTF_MIDDLEDOWN, 1}, 
+    {"MB_RIGHT", MOUSEEVENTF_RIGHTDOWN, 1}, {"MB_MIDDLE", MOUSEEVENTF_MIDDLEDOWN, 1},
     {"!", 10000 + '1', 0}, {"@", 10000 + '2', 0}, {"#", 10000 + '3', 0}, {"$", 10000 + '4', 0}, 
     {"%", 10000 + '5', 0}, {"^", 10000 + '6', 0}, {"&", 10000 + '7', 0}, {"*", 10000 + '8', 0}, 
     {"(", 10000 + '9', 0}, {")", 10000 + '0', 0}, {"_", 10000 + VK_OEM_MINUS, 0}, 
@@ -63,6 +63,41 @@ int isValidInteger(const char* str, int positive) {
     return 1;
 }
 
+INPUT keyToINPUT(WORD vkey, int up) {
+    INPUT keyInput;
+    keyInput.type = INPUT_KEYBOARD;
+    keyInput.ki.wScan = MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+    keyInput.ki.time = 0;
+    keyInput.ki.dwExtraInfo = 0;
+    keyInput.ki.wVk = vkey;
+    keyInput.ki.dwFlags = up ? KEYEVENTF_KEYUP : 0;
+    return keyInput;
+}
+
+INPUT mouseClickToINPUT(DWORD event) {
+    INPUT mouseInput;
+    mouseInput.type = INPUT_MOUSE;
+    mouseInput.mi.dwFlags = event;
+    mouseInput.mi.dx = 0;
+    mouseInput.mi.dy = 0;
+    mouseInput.mi.mouseData = 0;
+    mouseInput.mi.time = 0;
+    mouseInput.mi.dwExtraInfo = 0;
+    return mouseInput;
+}
+
+void scroll(int amount) {
+    INPUT mouseInput;
+    mouseInput.type = INPUT_MOUSE;
+    mouseInput.mi.dx = 0;
+    mouseInput.mi.dy = 0;
+    mouseInput.mi.mouseData = WHEEL_DELTA * amount;
+    mouseInput.mi.time = 0;
+    mouseInput.mi.dwExtraInfo = 0;
+    mouseInput.mi.dwFlags = MOUSEEVENTF_WHEEL;
+    SendInput(1, &mouseInput, sizeof(INPUT));
+}
+
 KeyMap* findKey(const char* key) {
     for (int i = 0; i < keyMapSize; i++) {
         if (strcmp(keyMap[i].key, key) == 0)
@@ -79,7 +114,8 @@ int pressKey(const char* key, int *isShiftDown) {
     }
 
     if (km->isMouse) {
-        mouse_event(km->mapping, 0, 0, 0, 0);
+        INPUT mouseInput = mouseClickToINPUT(km->mapping);
+        SendInput(1, &mouseInput, sizeof(INPUT));
     } 
     else {
         int mappingValue = km->mapping;
@@ -90,10 +126,12 @@ int pressKey(const char* key, int *isShiftDown) {
             *isShiftDown = 1;
         }
         else if (prefix == 1 && !*isShiftDown) {
-            keybd_event(VK_SHIFT, 0, 0, 0);
+            INPUT shift = keyToINPUT(VK_SHIFT, 0);
+            SendInput(1, &shift, sizeof(INPUT));
         }
 
-        keybd_event(code, 0, 0, 0);
+        INPUT keyInput = keyToINPUT(code, 0);
+        SendInput(1, &keyInput, sizeof(INPUT));
     }
 
     return 1;
@@ -114,30 +152,29 @@ int releaseKey(const char* key, int *isShiftDown) {
         else if (km->mapping == MOUSEEVENTF_RIGHTDOWN)
             releaseEvent = MOUSEEVENTF_RIGHTUP;
         else
-            releaseEvent = MOUSEEVENTF_MIDDLEDOWN;
+            releaseEvent = MOUSEEVENTF_MIDDLEUP;
 
-        mouse_event(releaseEvent, 0, 0, 0, 0);
+        INPUT mouseInput = mouseClickToINPUT(releaseEvent);
+        SendInput(1, &mouseInput, sizeof(INPUT));
     } 
     else {
         int mappingValue = km->mapping;
         int prefix = mappingValue / 10000;
         int code = mappingValue % 10000;
 
-        keybd_event(code, 0, KEYEVENTF_KEYUP, 0);
+        INPUT keyInput = keyToINPUT(code, 1);
+        SendInput(1, &keyInput, sizeof(INPUT));
 
         if (strcmp(key, "SHIFT") == 0) {
             *isShiftDown = 0;
         }
         else if (prefix == 1 && !*isShiftDown) {
-            keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
+            INPUT shift = keyToINPUT(VK_SHIFT, 1);
+            SendInput(1, &shift, sizeof(INPUT));
         }
     }
 
     return 1;
-}
-
-void scroll(int amount) {
-    mouse_event(MOUSEEVENTF_WHEEL, 0, 0, amount * WHEEL_DELTA, 0);
 }
 
 void parseAndRun(const char* filename, int repeat) {
@@ -194,7 +231,11 @@ void parseAndRun(const char* filename, int repeat) {
         }
 
         if (isShiftDown) {
-            keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
+            INPUT input = {0};
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = VK_SHIFT;
+            input.ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(1, &input, sizeof(INPUT));
             isShiftDown = 0;
         }
 
