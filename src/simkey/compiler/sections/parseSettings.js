@@ -15,18 +15,15 @@ module.exports = (context) => {
         // First input for token
         const firstIn = tokens[i + 2]
 
-        // Handle repeat assignment
         if (token === "repeat") {
             // Number repeat
             if (Number(firstIn)) {
                 context.model.SETTINGS.repeat = Number(firstIn)
             }
-
             // Literal repeat (boolean)
             else if (firstIn === "OFF" || firstIn === "ON") {
                 context.model.SETTINGS.repeat = firstIn
             }
-
             // Not a valid value
             else {
                 ThrowError(2000, { AT: firstIn })
@@ -36,7 +33,6 @@ module.exports = (context) => {
             return i + 2
         }
 
-        // Handle name assignment
         else if (token === "name") {
             // Deal with string and move along, error if no starting "
             if (!firstIn.startsWith("\"")) {
@@ -53,13 +49,11 @@ module.exports = (context) => {
             return newIndex
         }
 
-        // Handle mode assignment
         else if (token === "mode") {
             // Set value if valid variable name, otherwise error
             if (!checkVariableName(firstIn)) {
                 ThrowError(2010, { AT: firstIn })
             }
-
             // Update settings in model
             context.model.SETTINGS.mode = firstIn
 
@@ -67,7 +61,6 @@ module.exports = (context) => {
             return i + 2
         }
 
-        // Handle switches assignment
         else if (token === "switches") {
             // Parse array if opening bracket is present in correct spot, otherwise error
             if (!firstIn.startsWith("[")) {
@@ -86,6 +79,12 @@ module.exports = (context) => {
 
             // Index after array
             return newIndex
+        }
+
+        // Handle shortcut assignment
+        else if (token === "shortcut") {
+            context.model.SETTINGS.shortcut = firstIn
+            return i + 2
         }
 
         // Invalid attribute named in assignment

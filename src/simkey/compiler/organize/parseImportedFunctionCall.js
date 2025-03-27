@@ -79,7 +79,7 @@ module.exports = (context, token, parsed, i, parseInnards, section) => {
                 if (arg !== "TRUE" && arg !== "FALSE") {
                     continue
                 }
-                
+
                 finalArray.push(arg === "TRUE" ? true : false)
                 break
             }
@@ -115,7 +115,7 @@ module.exports = (context, token, parsed, i, parseInnards, section) => {
                     finalArray.push(string)
                     x = finalIndex
                     break
-                } 
+                }
                 catch (error) {
                     continue
                 }
@@ -126,7 +126,7 @@ module.exports = (context, token, parsed, i, parseInnards, section) => {
             x = value.length
             break
         }
-        
+
         // No new element added so nothing matched, invalid type
         if (finalArray.length === prevSize) {
             ThrowError(2110, { AT: token, ARG: arg, EXPECTED: expectedArray })
@@ -134,10 +134,10 @@ module.exports = (context, token, parsed, i, parseInnards, section) => {
     }
 
     // Get optional index for finding needed length right after
-    let optionalIndex = importParams.reduce((foundIndex, elementArray) => {
+    let optionalIndex = importParams.reduce((foundIndex, elementArray, curIndex) => {
                             if (foundIndex !== -1) return foundIndex;
                             const index = elementArray.findIndex((val) => val.endsWith(":OPTIONAL"));
-                            return index !== -1 ? index : foundIndex;
+                            return index !== -1 ? curIndex : -1;
                         }, -1)
     let neededLength = optionalIndex > -1 ? optionalIndex : importParams.length
 
@@ -154,7 +154,7 @@ module.exports = (context, token, parsed, i, parseInnards, section) => {
 
     // Doesnt have block even though its required
     if (context.tokens[newIndex + 1] !== "{") {
-        ThrowError(1035, { AT : token })
+        ThrowError(1035, { AT: token })
     }
 
     // Not necessary to parse, just use newerIndex to give tokens

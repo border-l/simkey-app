@@ -48,7 +48,8 @@ class Compiler {
                 "name": "",
                 "mode": "$DEFAULT",
                 "switches": [],
-                "repeat": "OFF"
+                "repeat": "OFF",
+                "shortcut": "NONE"
             },
             "VECTORS": {},
             "MODES": ["$DEFAULT"],
@@ -140,17 +141,14 @@ class Compiler {
         return JSON.parse(JSON.stringify(this.#inputVectors))
     }
 
-    // Modes
     getModes() {
         return JSON.parse(JSON.stringify(this.#model.MODES))
     }
 
-    // Switches
     getSwitches() {
         return JSON.parse(JSON.stringify(this.#model.SWITCHES))
     }
 
-    // Settings
     getSettings() {
         return JSON.parse(JSON.stringify(this.#model.SETTINGS))
     }

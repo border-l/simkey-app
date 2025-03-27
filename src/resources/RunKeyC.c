@@ -16,16 +16,40 @@ KeyMap keyMap[] = {
     {"K", 10000 + 'K', 0}, {"L", 10000 + 'L', 0}, {"M", 10000 + 'M', 0}, {"N", 10000 + 'N', 0}, {"O", 10000 + 'O', 0}, 
     {"P", 10000 + 'P', 0}, {"Q", 10000 + 'Q', 0}, {"R", 10000 + 'R', 0}, {"S", 10000 + 'S', 0}, {"T", 10000 + 'T', 0}, 
     {"U", 10000 + 'U', 0}, {"V", 10000 + 'V', 0}, {"W", 10000 + 'W', 0}, {"X", 10000 + 'X', 0}, {"Y", 10000 + 'Y', 0}, 
-    {"Z", 10000 + 'Z', 0}, {"a", 'A', 0}, {"b", 'B', 0}, {"c", 'C', 0}, {"d", 'D', 0}, {"e", 'E', 0}, 
+    {"Z", 10000 + 'Z', 0}, 
+
+    {"a", 'A', 0}, {"b", 'B', 0}, {"c", 'C', 0}, {"d", 'D', 0}, {"e", 'E', 0}, 
     {"f", 'F', 0}, {"g", 'G', 0}, {"h", 'H', 0}, {"i", 'I', 0}, {"j", 'J', 0}, {"k", 'K', 0}, 
     {"l", 'L', 0}, {"m", 'M', 0}, {"n", 'N', 0}, {"o", 'O', 0}, {"p", 'P', 0}, {"q", 'Q', 0}, 
     {"r", 'R', 0}, {"s", 'S', 0}, {"t", 'T', 0}, {"u", 'U', 0}, {"v", 'V', 0}, {"w", 'W', 0}, 
-    {"x", 'X', 0}, {"y", 'Y', 0}, {"z", 'Z', 0}, {"1", '1', 0}, {"2", '2', 0}, {"3", '3', 0}, 
-    {"4", '4', 0}, {"5", '5', 0}, {"6", '6', 0}, {"7", '7', 0}, {"8", '8', 0}, {"9", '9', 0}, 
-    {"0", '0', 0}, {"ENTER", VK_RETURN, 0}, {"SHIFT", VK_SHIFT, 0}, {"CTRL", VK_CONTROL, 0}, 
+    {"x", 'X', 0}, {"y", 'Y', 0}, {"z", 'Z', 0},
+    {"1", '1', 0}, {"2", '2', 0}, {"3", '3', 0}, {"4", '4', 0}, {"5", '5', 0}, {"6", '6', 0}, 
+    {"7", '7', 0}, {"8", '8', 0}, {"9", '9', 0}, {"0", '0', 0},
+
+    {"F1", VK_F1, 0}, {"F2", VK_F2, 0}, {"F3", VK_F3, 0}, {"F4", VK_F4, 0}, {"F5", VK_F5, 0}, 
+    {"F6", VK_F6, 0}, {"F7", VK_F7, 0}, {"F8", VK_F8, 0}, {"F9", VK_F9, 0}, {"F10", VK_F10, 0}, 
+    {"F11", VK_F11, 0}, {"F12", VK_F12, 0}, {"F13", VK_F1, 0}, {"F14", VK_F2, 0}, {"F15", VK_F3, 0}, 
+    {"F16", VK_F4, 0}, {"F17", VK_F5, 0}, {"F18", VK_F6, 0}, {"F19", VK_F7, 0}, {"F20", VK_F8, 0}, 
+    {"F21", VK_F9, 0}, {"F22", VK_F10, 0}, {"F23", VK_F11, 0}, {"F24", VK_F12, 0},
+
+    {"CMD", VK_LWIN, 0}, {"WIN", VK_LWIN, 0}, {"CAPS", VK_CAPITAL, 0}, {"TAB", VK_TAB, 0}, 
+    {"LIST", VK_APPS, 0}, {"END", VK_END, 0}, {"PRNTSCR", VK_SNAPSHOT, 0}, {"SCRL_LOCK", VK_SCROLL, 0}, 
+    {"PAUSE", VK_PAUSE, 0}, {"PG_UP", VK_PRIOR, 0}, {"PG_DOWN", VK_NEXT, 0}, {"HOME", VK_HOME, 0}, 
+    {"INS", VK_INSERT, 0}, {"DEL", VK_DELETE, 0},
+
+    {"NUM_LOCK", VK_NUMLOCK, 0}, {"NUM_0", VK_NUMPAD0, 0}, {"NUM_1", VK_NUMPAD1, 0}, {"NUM_2", VK_NUMPAD2, 0}, {"NUM_3", VK_NUMPAD3, 0}, 
+    {"NUM_4", VK_NUMPAD4, 0}, {"NUM_5", VK_NUMPAD5, 0}, {"NUM_6", VK_NUMPAD6, 0}, {"NUM_7", VK_NUMPAD7, 0}, {"NUM_8", VK_NUMPAD8, 0}, {"NUM_9", VK_NUMPAD9, 0}, 
+    {"ADD", VK_ADD, 0}, {"SUB", VK_SUBTRACT, 0}, {"MUL", VK_MULTIPLY, 0}, {"DIV", VK_DIVIDE, 0}, {"DEC", VK_DECIMAL, 0}, {"CLEAR", VK_CLEAR, 0},
+
+    {"VOL_MUTE", VK_VOLUME_MUTE, 0}, {"VOL_DOWN", VK_VOLUME_DOWN, 0}, {"VOL_UP", VK_VOLUME_UP, 0},
+    {"MEDIA_NEXT", VK_MEDIA_NEXT_TRACK, 0}, {"MEDIA_PREV", VK_MEDIA_PREV_TRACK, 0}, {"MEDIA_STOP", VK_MEDIA_STOP, 0}, {"MEDIA_PLAY_PAUSE", VK_MEDIA_PLAY_PAUSE, 0},
+
+    {"BACK", VK_BACK, 0}, {"ENTER", VK_RETURN, 0}, {"SHIFT", VK_SHIFT, 0}, {"CTRL", VK_CONTROL, 0}, 
     {"ALT", VK_MENU, 0}, {"SPACE", VK_SPACE, 0}, {"ESC", VK_ESCAPE, 0}, {"LEFT", VK_LEFT, 0}, 
-    {"RIGHT", VK_RIGHT, 0}, {"UP", VK_UP, 0}, {"DOWN", VK_DOWN, 0}, {"MB_LEFT", MOUSEEVENTF_LEFTDOWN, 1}, 
-    {"MB_RIGHT", MOUSEEVENTF_RIGHTDOWN, 1}, {"MB_MIDDLE", MOUSEEVENTF_MIDDLEDOWN, 1},
+    {"RIGHT", VK_RIGHT, 0}, {"UP", VK_UP, 0}, {"DOWN", VK_DOWN, 0}, 
+
+    {"MB_LEFT", MOUSEEVENTF_LEFTDOWN, 1}, {"MB_RIGHT", MOUSEEVENTF_RIGHTDOWN, 1}, {"MB_MIDDLE", MOUSEEVENTF_MIDDLEDOWN, 1},
+
     {"!", 10000 + '1', 0}, {"@", 10000 + '2', 0}, {"#", 10000 + '3', 0}, {"$", 10000 + '4', 0}, 
     {"%", 10000 + '5', 0}, {"^", 10000 + '6', 0}, {"&", 10000 + '7', 0}, {"*", 10000 + '8', 0}, 
     {"(", 10000 + '9', 0}, {")", 10000 + '0', 0}, {"_", 10000 + VK_OEM_MINUS, 0}, 
@@ -34,11 +58,7 @@ KeyMap keyMap[] = {
     {"\"", 10000 + VK_OEM_7, 0}, {"<", 10000 + VK_OEM_COMMA, 0}, {">", 10000 + VK_OEM_PERIOD, 0}, 
     {"?", 10000 + VK_OEM_2, 0}, {"=", VK_OEM_PLUS, 0}, {"-", VK_OEM_MINUS, 0}, {"`", VK_OEM_3, 0}, 
     {"[", VK_OEM_4, 0}, {"]", VK_OEM_6, 0}, {"\\", VK_OEM_5, 0}, {";", VK_OEM_1, 0}, 
-    {"'", VK_OEM_7, 0}, {",", VK_OEM_COMMA, 0}, {".", VK_OEM_PERIOD, 0}, {"/", VK_OEM_2, 0}, 
-    {"CMD", VK_LWIN, 0}, {"WIN", VK_LWIN, 0}, {"CAPS", VK_CAPITAL, 0}, {"TAB", VK_TAB, 0}, 
-    {"LIST", VK_APPS, 0}, {"END", VK_END, 0}, {"PRNTSCR", VK_SNAPSHOT, 0}, {"SCRL_LOCK", VK_SCROLL, 0}, 
-    {"PAUSE", VK_PAUSE, 0}, {"PG_UP", VK_PRIOR, 0}, {"PG_DOWN", VK_NEXT, 0}, {"HOME", VK_HOME, 0}, 
-    {"INS", VK_INSERT, 0}, {"DEL", VK_DELETE, 0}
+    {"'", VK_OEM_7, 0}, {",", VK_OEM_COMMA, 0}, {".", VK_OEM_PERIOD, 0}, {"/", VK_OEM_2, 0}
 };
 
 int keyMapSize = sizeof(keyMap) / sizeof(KeyMap);
@@ -95,6 +115,18 @@ void scroll(int amount) {
     mouseInput.mi.time = 0;
     mouseInput.mi.dwExtraInfo = 0;
     mouseInput.mi.dwFlags = MOUSEEVENTF_WHEEL;
+    SendInput(1, &mouseInput, sizeof(INPUT));
+}
+
+void setCursor(int x, int y) {
+    INPUT mouseInput;
+    mouseInput.type = INPUT_MOUSE;
+    mouseInput.mi.dx = (x * 65535) / GetSystemMetrics(SM_CXSCREEN);
+    mouseInput.mi.dy = (y * 65535) / GetSystemMetrics(SM_CYSCREEN);
+    mouseInput.mi.mouseData = 0;
+    mouseInput.mi.time = 0;
+    mouseInput.mi.dwExtraInfo = 0;
+    mouseInput.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
     SendInput(1, &mouseInput, sizeof(INPUT));
 }
 
@@ -218,7 +250,7 @@ void parseAndRun(const char* filename, int repeat) {
                     if (sscanf(argument, "%d,%d", &x, &y) != 2) {
                         exitError("Invalid cursor move command\n", file);
                     }
-                    SetCursorPos(x, y);
+                    setCursor(x, y);
                     break;
                 }
                 case 's':

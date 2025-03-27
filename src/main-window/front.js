@@ -191,20 +191,10 @@ async function reloadScript(location) {
     scriptReload.disabled = true
 
     const result = await window.electron.reloadScript(location)
-    if (!result[0]) {
-        document.getElementById(`script-${location}`).remove()
-        if (currentConfigure.location === location) {
-            currentConfigure = {}
-            initialCurrentConfigure = {}
-            setDisableConfig(true)
-        }
-        return
-    }
-
     setTimeout(() => {
         reloadSVG.classList.remove("reload-spin")
         scriptReload.disabled = false
-        document.getElementById(`script-title-${location}`).innerText = result[1]
+        result ? document.getElementById(`script-title-${location}`).innerText = result : 0
     }, 200)
 }
 

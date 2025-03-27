@@ -6,10 +6,12 @@ const asar = require("@electron/asar")
 const { spawn, exec } = require('child_process')
 const fs = require('fs-extra')
 
-const scriptsPath = path.join(app.getPath('userData'), 'src', 'scripts.json')
-const keycFilesPath = path.join(app.getPath('userData'), 'src', 'keyc-files')
-const RunKeyCPath = path.join(app.getPath('userData'), 'src', 'resources', 'RunKeyC.exe')
-const simkeyPath = path.join(app.getPath('userData'), 'src', 'simkey', 'SimkeyCompiler.js')
+const appVersion = "v" + app.getVersion()
+const scriptsPath = path.join(app.getPath('userData'), appVersion, 'scripts', 'scripts.json')
+const keycFilesPath = path.join(app.getPath('userData'), appVersion, 'scripts', 'keyc-files')
+const RunKeyCPath = path.join(app.getPath('userData'), appVersion, 'src', 'resources', 'RunKeyC.c')
+const RunKeyCExePath = path.join(app.getPath('userData'), appVersion, 'src', 'resources', 'RunKeyC.exe')
+const simkeyPath = path.join(app.getPath('userData'), appVersion, 'src', 'simkey', 'SimkeyCompiler.js')
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({
@@ -38,9 +40,11 @@ const createWindow = () => {
 
 let Compiler
 
+
 const checkAndCreateDir = async (dirPath) => {
     await fs.mkdir(dirPath, { recursive: true })
 }
+
 
 (async () => {
     app.whenReady().then(() => {
@@ -54,6 +58,7 @@ const checkAndCreateDir = async (dirPath) => {
     })
 
     await checkAndCreateDir(path.dirname(RunKeyCPath))
+    await checkAndCreateDir(path.dirname(RunKeyCExePath))
     await checkAndCreateDir(path.dirname(scriptsPath))
     await checkAndCreateDir(keycFilesPath)
 
@@ -64,14 +69,16 @@ const checkAndCreateDir = async (dirPath) => {
             for (const script in scripts) {
                 addShortcut(scripts[script])
             }
-        }).catch((err) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts.\n${err}`))
-    } catch (err) {
+        }).catch((err) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts. It may already be taken by another program.`))
+    }
+    catch (err) {
         await fs.writeFile(scriptsPath, JSON.stringify({}, null, 2))
     }
 
     try {
         await fs.access(simkeyPath)
-    } catch (err) {
+    }
+    catch (err) {
         const destPath = path.join(app.getPath('userData'), 'temp-src')
 
         if (path.extname(app.getAppPath()).toLowerCase() !== ".asar") {
@@ -86,7 +93,8 @@ const checkAndCreateDir = async (dirPath) => {
         try {
             await installSimkeyDependencies()
             Compiler = require(simkeyPath);
-        } catch (err) {
+        }
+        catch (err) {
             dialog.showErrorBox("Installing dependencies failed", `Could not install depencies for Simkey. Delete your %appdata%/src directory and retry the installation.`)
         }
 
@@ -94,14 +102,19 @@ const checkAndCreateDir = async (dirPath) => {
     }
 
     try {
+        await fs.access(RunKeyCExePath)
         await fs.access(RunKeyCPath)
-    } catch (err) {
+    }
+    catch (err) {
         const RunKeyCExe = asar.extractFile(app.getAppPath(), path.join("src", "resources", "RunKeyC.exe"))
-        await fs.writeFile(RunKeyCPath, RunKeyCExe)   
+        const RunKeyCC = asar.extractFile(app.getAppPath(), path.join("src", "resources", "RunKeyC.c"))
+        await fs.writeFile(RunKeyCExePath, RunKeyCExe)
+        await fs.writeFile(RunKeyCPath, RunKeyCC)
     }
 
     Compiler = require(simkeyPath)
 })()
+
 
 function installSimkeyDependencies() {
     return new Promise((resolve, reject) => {
@@ -115,6 +128,7 @@ function installSimkeyDependencies() {
     })
 }
 
+
 let mainWindow
 let utilWindow
 
@@ -125,9 +139,7 @@ if (started) {
 }
 
 
-const currentExecProcesses = {
-
-}
+const currentExecProcesses = {}
 
 app.on('window-all-closed', () => {
     globalShortcut.unregisterAll()
@@ -165,12 +177,11 @@ ipcMain.handle('load-new-script', async () => {
 
         const scriptInfo = {
             title,
-            shortcut: "NONE",
             modeOptions: compileFile.getModes(),
             switchOptions: compileFile.getSwitches()
         }
 
-        const { name, mode, switches, repeat } = compileFile.getSettings()
+        const { name, mode, switches, repeat, shortcut } = compileFile.getSettings()
 
         if (name.length > 1) scriptInfo.title = name
         scriptInfo.repeat = repeat
@@ -182,13 +193,27 @@ ipcMain.handle('load-new-script', async () => {
         compileFile.setSettings(getSettingsObject(scriptInfo))
         compileFile.compile(path.join(keycFilesPath, scriptInfo.keyc))
 
+        let setLater = false
+        scriptInfo.shortcut = shortcut
+        if (shortcut !== "NONE") {
+            if (checkValidShortcut(shortcut) !== true) {
+                dialog.showErrorBox("An Error Occured", `Shortcut in the SETTINGS section of Simkey script is invalid or is already taken by another program or script. No shortcut has been set for this script.`)
+                scriptInfo.shortcut = "NONE"
+            }
+            else setLater = true
+        }
+
         scripts[filePaths[0]] = scriptInfo
         await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+
+        if (setLater) {
+            addShortcut(scriptInfo)
+        }
 
         return [scriptInfo.title, filePaths[0]]
     }
     catch (err) {
-        dialog.showErrorBox("An Error Occured", `Error while trying to load script in ${filePaths[0]} (it contains an error, or error while loading the file).\n${err}`)
+        dialog.showErrorBox("An Error Occured", `Error while trying to load script in ${filePaths[0]} (it contains an error, or error occurred while loading the file).\n${err}`)
         return false
     }
 })
@@ -211,7 +236,6 @@ ipcMain.handle('reload-script', async (event, location) => {
     const script = scripts[location]
 
     try {
-        await fs.rm(path.join(keycFilesPath, script.keyc))
         const compileFile = new Compiler(location)
 
         script.switchOptions = compileFile.getSwitches()
@@ -220,6 +244,7 @@ ipcMain.handle('reload-script', async (event, location) => {
         script.switches = script.switches.filter(val => script.switchOptions.includes(val))
         if (!script.modeOptions.includes(script.mode)) script.mode = "$DEFAULT"
 
+        const oldKeyC = script.keyc
         script.keyc = getKEYCName(scripts)
         compileFile.setSettings(getSettingsObject(script))
 
@@ -252,14 +277,12 @@ ipcMain.handle('reload-script', async (event, location) => {
         script.title = title
 
         await fs.writeFile(scriptsPath, JSON.stringify(scripts))
-        return [true, title]
+        await fs.rm(path.join(keycFilesPath, oldKeyC))
+        return title // return [true, title]
     }
     catch (err) {
-        if (script.shortcut !== "NONE") globalShortcut.unregister(script.shortcut)
-        delete scripts[location]
-        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
-        dialog.showErrorBox("Reloaded Script Error", `There was an error when reloading the script (this is most likely from changes that cause Simkey errors). The script will now be deleted.\n${err}`)
-        return [false]
+        dialog.showErrorBox("Reloaded Script Error", `There was an error when reloading the script. This is most likely from a change that caused an error in your script, or an error from handling a file. The script has not been updated.\n${err}`)
+        return false
     }
 })
 
@@ -267,25 +290,12 @@ ipcMain.handle('reload-script', async (event, location) => {
 ipcMain.handle('save-script', async (event, location, options, forceRecompile = true) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
 
-    if (options.shortcut !== "NONE" && scripts?.[location]?.shortcut !== options.shortcut) {
-        try {
-            if (globalShortcut.isRegistered(options.shortcut)) {
-                dialog.showErrorBox("Conflicting Shortcut", `The shortcut ${options.shortcut} is already in use. Choose another one.`)
-                return false
-            }
-        }
-        catch (err) {
-            dialog.showErrorBox("Invalid Shortcut", `The shortcut ${options.shortcut} might be invalid. Choose another one.`)
-            return false
-        }
-        globalShortcut.register(options.shortcut, () => { })
-        if (!globalShortcut.isRegistered(options.shortcut)) {
-            dialog.showErrorBox("Invalid Shortcut", `The shortcut ${options.shortcut} might be invalid. Choose another one.`)
-            return false
-        }
-    }
     if (options.shortcut !== "NONE") {
-        globalShortcut.unregister(options.shortcut)
+        if (scripts?.[location]?.shortcut !== options.shortcut) {
+            const check = checkValidShortcut(options.shortcut)
+            if (check === 10) dialog.showErrorBox("Conflicting Shortcut", `The shortcut ${options.shortcut} is already in use. Choose another one.`)
+            if (check === 20) dialog.showErrorBox("Invalid Shortcut", `The shortcut ${options.shortcut} might be invalid. Choose another one.`)
+        }
     }
 
     if (isNaN(options.repeat) && options.repeat !== "OFF" && options.repeat !== "ON") {
@@ -443,7 +453,7 @@ function getKEYCName(scripts) {
 }
 
 function getRandomKEYCName() {
-    const randomChars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', '0', '1', '2', '3', '4']
+    const randomChars = ['a', 'b', 'c', 'd', 'e', 'f', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     let name = ""
     for (let i = 0; i < 15; i++) {
         name += randomChars[Math.floor(Math.random() * (randomChars.length - 1))]
@@ -464,7 +474,7 @@ function getSettingsObject(scriptInfo) {
 
 
 function spawnWithCommand(scriptInfo) {
-    const exeFilepath = path.resolve(__dirname, RunKeyCPath)
+    const exeFilepath = path.resolve(__dirname, RunKeyCExePath)
     const keycFilePath = path.join(keycFilesPath, scriptInfo.keyc)
     return spawn(exeFilepath, [keycFilePath, scriptInfo.repeat])
 }
@@ -492,4 +502,22 @@ function terminateOrRun(keycFileName, scriptInfo) {
             mainWindow.webContents.send("run-message", 0)
         })
     }
+}
+
+
+function checkValidShortcut(shortcut) {
+    try {
+        if (globalShortcut.isRegistered(shortcut)) {
+            return 10
+        }
+    }
+    catch (err) {
+        return 20
+    }
+    globalShortcut.register(shortcut, () => { })
+    if (!globalShortcut.isRegistered(shortcut)) {
+        return 20
+    }
+    globalShortcut.unregister(shortcut)
+    return true
 }
