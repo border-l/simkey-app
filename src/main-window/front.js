@@ -194,7 +194,9 @@ async function reloadScript(location) {
     setTimeout(() => {
         reloadSVG.classList.remove("reload-spin")
         scriptReload.disabled = false
-        result ? document.getElementById(`script-title-${location}`).innerText = result : 0
+        if (result !== false) {
+            document.getElementById(`script-title-${location}`).innerText = result
+        }
     }, 200)
 }
 

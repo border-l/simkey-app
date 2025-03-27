@@ -197,8 +197,8 @@ ipcMain.handle('load-new-script', async () => {
         scriptInfo.shortcut = shortcut
         if (shortcut !== "NONE") {
             if (checkValidShortcut(shortcut) !== true) {
-                dialog.showErrorBox("An Error Occured", `Shortcut in the SETTINGS section of Simkey script is invalid or is already taken by another program or script. No shortcut has been set for this script.`)
                 scriptInfo.shortcut = "NONE"
+                dialog.showErrorBox("An Error Occured", `Shortcut in the SETTINGS section of Simkey script is invalid or is already taken by another program or script. No shortcut has been set for this script.`)
             }
             else setLater = true
         }
