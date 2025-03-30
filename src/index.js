@@ -294,6 +294,7 @@ ipcMain.handle('save-script', async (event, location, options, forceRecompile = 
             const check = checkValidShortcut(options.shortcut)
             if (check === 10) dialog.showErrorBox("Conflicting Shortcut", `The shortcut ${options.shortcut} is already in use. Choose another one.`)
             if (check === 20) dialog.showErrorBox("Invalid Shortcut", `The shortcut ${options.shortcut} might be invalid. Choose another one.`)
+            if (check === 10 || check === 20) return false
         }
     }
 
