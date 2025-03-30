@@ -77,6 +77,7 @@ const checkAndCreateDir = async (dirPath) => {
 
     try {
         await fs.access(simkeyPath)
+        Compiler = require(simkeyPath)
     }
     catch (err) {
         const destPath = path.join(app.getPath('userData'), 'temp-src')
@@ -89,10 +90,10 @@ const checkAndCreateDir = async (dirPath) => {
         asar.extractAll(app.getAppPath(), destPath)
         const tempSimkeyPath = path.join(destPath, "src", "simkey")
         await fs.move(tempSimkeyPath, path.dirname(simkeyPath))
-        
+
         try {
             await installSimkeyDependencies()
-            Compiler = require(simkeyPath);
+            Compiler = require(simkeyPath)
         }
         catch (err) {
             dialog.showErrorBox("Installing dependencies failed", `Could not install depencies for Simkey. Delete your %appdata%/src directory and retry the installation.`)
@@ -111,8 +112,6 @@ const checkAndCreateDir = async (dirPath) => {
         await fs.writeFile(RunKeyCExePath, RunKeyCExe)
         await fs.writeFile(RunKeyCPath, RunKeyCC)
     }
-
-    Compiler = require(simkeyPath)
 })()
 
 
