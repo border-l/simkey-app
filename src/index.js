@@ -3,17 +3,64 @@ const path = require('path')
 const started = require('electron-squirrel-startup')
 const asar = require("@electron/asar")
 
-const { spawn, exec } = require('child_process')
 const fs = require('fs-extra')
-
 const appVersion = "v" + app.getVersion()
-const scriptsPath = path.join(app.getPath('userData'), appVersion, 'scripts', 'scripts.json')
-const keycFilesPath = path.join(app.getPath('userData'), appVersion, 'scripts', 'keyc-files')
-const RunKeyCPath = path.join(app.getPath('userData'), appVersion, 'src', 'resources', 'RunKeyC.c')
-const RunKeyCExePath = path.join(app.getPath('userData'), appVersion, 'src', 'resources', 'RunKeyC.exe')
-const simkeyPath = path.join(app.getPath('userData'), appVersion, 'src', 'simkey', 'SimkeyCompiler.js')
+const scriptsPath = path.join(app.getPath('userData'), appVersion, 'scripts.json')
+const simkeyPath = path.join(process.resourcesPath, 'simkey', 'SimkeyInterpreter.js')
 
-const createWindow = () => {
+const Interpret = require(simkeyPath)
+
+let mainWindow
+let utilWindow
+let cursorListener
+
+const running = {};
+
+
+/*........ App startup ........*/
+
+(async () => {
+    app.whenReady().then(() => {
+        createWindow()
+
+        app.on('activate', () => {
+            if (BrowserWindow.getAllWindows().length === 0) {
+                createWindow()
+            }
+        })
+    })
+
+    await fs.mkdir(path.dirname(scriptsPath), { recursive: true })
+
+    try {
+        await fs.access(scriptsPath)
+
+        fs.readFile(scriptsPath, "utf-8")
+            .then(data => JSON.parse(data))
+            .then(scripts => {
+                for (const script in scripts) {
+                    if (addShortcut(scripts[script], script) !== true) throw Error("")
+                }
+            })
+            .catch((_) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts. A shortcut may be invalid or already taken by another program.`))
+    }
+
+    catch (err) {
+        await fs.writeFile(scriptsPath, JSON.stringify({}, null, 2))
+    }
+})()
+
+
+if (started) app.quit()
+app.on('window-all-closed', () => {
+    globalShortcut.unregisterAll()
+    if (process.platform !== 'darwin') app.quit()
+})
+
+
+/*........ Helpers ........*/
+
+function createWindow() {
     mainWindow = new BrowserWindow({
         height: 615,
         width: 800,
@@ -38,183 +85,143 @@ const createWindow = () => {
     })
 }
 
-let Compiler
 
+function validateSingleInput(value, type, bounds) {
+    if ((type === "MODE" || type === "SWITCH") && typeof value !== "boolean") return false
+    if (type === "STRING" && typeof value !== "string") return false
+    if (type === "NUMBER" && (isNaN(value) || typeof value !== "number")) return false
+    if (type === "VECTOR" && (!Array.isArray(value) 
+        || value.some(val => isNaN(val) || typeof val !== "number") 
+        || value.length < bounds[0] || value.length > bounds[1])) return false
 
-const checkAndCreateDir = async (dirPath) => {
-    await fs.mkdir(dirPath, { recursive: true })
+    return true
 }
 
 
-(async () => {
-    app.whenReady().then(() => {
-        createWindow()
-    
-        app.on('activate', () => {
-            if (BrowserWindow.getAllWindows().length === 0) {
-                createWindow()
-            }
-        })
-    })
-
-    await checkAndCreateDir(path.dirname(RunKeyCPath))
-    await checkAndCreateDir(path.dirname(RunKeyCExePath))
-    await checkAndCreateDir(path.dirname(scriptsPath))
-    await checkAndCreateDir(keycFilesPath)
-
-    try {
-        await fs.access(scriptsPath)
-
-        fs.readFile(scriptsPath, "utf-8").then(data => JSON.parse(data)).then(scripts => {
-            for (const script in scripts) {
-                addShortcut(scripts[script])
-            }
-        }).catch((err) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts. It may already be taken by another program.`))
-    }
-    catch (err) {
-        await fs.writeFile(scriptsPath, JSON.stringify({}, null, 2))
-    }
-
-    try {
-        await fs.access(simkeyPath)
-        Compiler = require(simkeyPath)
-    }
-    catch (err) {
-        const destPath = path.join(app.getPath('userData'), 'temp-src')
-
-        if (path.extname(app.getAppPath()).toLowerCase() !== ".asar") {
-            console.log("Simkey path should exist as this is for testing. Add simkey dir in userData and retry.")
-            return
-        }
-
-        asar.extractAll(app.getAppPath(), destPath)
-        const tempSimkeyPath = path.join(destPath, "src", "simkey")
-        await fs.move(tempSimkeyPath, path.dirname(simkeyPath))
-
-        try {
-            await installSimkeyDependencies()
-            Compiler = require(simkeyPath)
-        }
-        catch (err) {
-            dialog.showErrorBox("Installing dependencies failed", `Could not install depencies for Simkey. Delete your %appdata%/src directory and retry the installation.`)
-        }
-
-        await fs.remove(destPath)
-    }
-
-    try {
-        await fs.access(RunKeyCExePath)
-        await fs.access(RunKeyCPath)
-    }
-    catch (err) {
-        const RunKeyCExe = asar.extractFile(app.getAppPath(), path.join("src", "resources", "RunKeyC.exe"))
-        const RunKeyCC = asar.extractFile(app.getAppPath(), path.join("src", "resources", "RunKeyC.c"))
-        await fs.writeFile(RunKeyCExePath, RunKeyCExe)
-        await fs.writeFile(RunKeyCPath, RunKeyCC)
-    }
-})()
-
-
-function installSimkeyDependencies() {
-    return new Promise((resolve, reject) => {
-        exec('npm install', { cwd: path.dirname(simkeyPath) }, (err, stdout, stderr) => {
-            if (err) {
-                reject("Could not install dependencies." + err)
-                return
-            }
-            resolve(stdout)
-        })
-    })
+function getType(name, inputs) {
+    if (inputs.MODES.includes(name)) return "MODE"
+    if (inputs.SWITCHES.includes(name)) return "SWITCH"
+    if (inputs.STRINGS.includes(name)) return "STRING"
+    if (inputs.NUMBERS.includes(name)) return "NUMBER"
+    if (inputs.VECTORS[name] !== undefined) return "VECTOR"
 }
 
 
-let mainWindow
-let utilWindow
+function validateInputs(inputs, values) {
+    let modeSet = false
 
-let cursorListener
+    for (const varName in values) {
+        const type = getType(varName, inputs)
+        if (!validateSingleInput(values[varName], type, inputs.VECTORS[varName])) return false
 
-if (started) {
-    app.quit()
+        if (type === "MODE" && values[varName]) {
+            if (modeSet) return false
+            modeSet = true
+        }
+    }
+
+    return true
 }
 
 
-const currentExecProcesses = {}
+function addShortcut(shortcut, path) {
+    if (shortcut === null) return
 
-app.on('window-all-closed', () => {
-    globalShortcut.unregisterAll()
-    if (process.platform !== 'darwin') {
-        app.quit()
-    }
-})
-
-
-ipcMain.handle('load-new-script', async () => {
-    const { canceled: cancelled, filePaths } = await dialog.showOpenDialog({
-        title: "Select a Simkey File",
-        properties: ["openFile"],
-        filters: [
-            { name: 'Simkey Files', extensions: ["simkey"] }
-        ]
-    })
-
-    if (cancelled) {
+    if (validateShortcut(shortcut) !== true) {
         return false
+    }
+
+    globalShortcut.register(shortcut, () => {
+        toggleScript(path)
+    })
+
+    return true
+}
+
+
+function validateShortcut(shortcut) {
+    try {
+        if (globalShortcut.isRegistered(shortcut)) return 10
+    }
+    catch (err) {
+        return 20
+    }
+
+    globalShortcut.register(shortcut, () => { })
+    if (!globalShortcut.isRegistered(shortcut)) return 20
+
+    globalShortcut.unregister(shortcut)
+    return true
+}
+
+
+function fixInputs(location, scriptInfo, inputs = null) {
+    // If inputs exists, forget, otherwise do the following
+    // Get current script inputs, Interpret(location).getInputs()
+    // Update the scriptInfo.validInputs key
+    // Go through each of the current inputs values in scriptInfo.
+    // Doesn't exist now? delete
+    // Doesn't work now? set to default
+    // Returns true if changed, false otherwise.
+    // Mutates scriptInfo. Should be saved by caller after if true.
+    inputs = inputs || (new Interpret(location)).getInputs()
+    scriptInfo.validInputs = inputs.INPUTS
+    let altered = false
+
+    for (const varName in scriptInfo.inputValues) {
+        if (!inputs.INPUTS[varName]) {
+            altered = true
+            delete inputs.INPUTS[varName]
+            continue
+        }
+
+        if (!validateSingleInput(scriptInfo.inputValues[varName], getType(varName, inputs.INPUTS), inputs.INPUTS[varName])) {
+            altered = true
+            scriptInfo.inputValues[varName] = inputs.VARIABLES[varName]
+        }
+    }
+
+    return altered
+}
+
+
+async function toggleScript(path) {
+    if (running[path] !== undefined) {
+        running[path].stop()
+        delete running[path]
+        mainWindow.webContents.send("run-message", [path, 0])
+        return
     }
 
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
 
-    if (scripts[filePaths[0]]) {
-        dialog.showErrorBox("Script is Already Loaded", `The script located in ${filePaths[0]} is already loaded. To reload, click the reload button in the scripts menu.`)
-        return false
-    }
+    running[path] = new Interpret(path)
+    if (fixInputs(path, scripts[path], running[path].getInputs())) await fs.writeFile(scriptsPath, JSON.stringify(scripts))
 
-    try {
-        const compileFile = new Compiler(filePaths[0])
+    running[path].setInputs(scripts[path].inputValues)
+    mainWindow.webContents.send("run-message", [path, 1])
 
-        let title = filePaths[0].replaceAll("\\", "/")
-        title = title.slice(title.lastIndexOf("/") + 1)
+    try { await running[path].run() }
+    catch (err) { /* Some way to send it */ }
+}
 
-        const scriptInfo = {
-            title,
-            modeOptions: compileFile.getModes(),
-            switchOptions: compileFile.getSwitches()
-        }
 
-        const { name, mode, switches, repeat, shortcut } = compileFile.getSettings()
+/*........ Handlers ........*/
 
-        if (name.length > 1) scriptInfo.title = name
-        scriptInfo.repeat = repeat
-        scriptInfo.switches = switches
-        scriptInfo.mode = mode
-        scriptInfo.keyc = getKEYCName(scripts)
-        scriptInfo.inputVectors = compileFile.getInputVectors()
+ipcMain.handle('open-script', async (event, location) => {
+    shell.openPath(location)
+})
 
-        compileFile.setSettings(getSettingsObject(scriptInfo))
-        compileFile.compile(path.join(keycFilesPath, scriptInfo.keyc))
 
-        let setLater = false
-        scriptInfo.shortcut = shortcut
-        if (shortcut !== "NONE") {
-            if (checkValidShortcut(shortcut) !== true) {
-                scriptInfo.shortcut = "NONE"
-                dialog.showErrorBox("An Error Occured", `Shortcut in the SETTINGS section of Simkey script is invalid or is already taken by another program or script. No shortcut has been set for this script.`)
-            }
-            else setLater = true
-        }
+ipcMain.handle('get-script-options', async (event, location) => {
+    const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
+    if (fixInputs(location, scripts[location])) await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+    return scripts[location]
+})
 
-        scripts[filePaths[0]] = scriptInfo
-        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
 
-        if (setLater) {
-            addShortcut(scriptInfo)
-        }
-
-        return [scriptInfo.title, filePaths[0]]
-    }
-    catch (err) {
-        dialog.showErrorBox("An Error Occured", `Error while trying to load script in ${filePaths[0]} (it contains an error, or error occurred while loading the file).\n${err}`)
-        return false
-    }
+ipcMain.handle('run-stop-script', async (event, location) => {
+    return toggleScript(location)
 })
 
 
@@ -230,160 +237,95 @@ ipcMain.handle('load-scripts', async () => {
 })
 
 
-ipcMain.handle('reload-script', async (event, location) => {
-    const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
-    const script = scripts[location]
-
-    try {
-        const compileFile = new Compiler(location)
-
-        script.switchOptions = compileFile.getSwitches()
-        script.modeOptions = compileFile.getModes()
-
-        script.switches = script.switches.filter(val => script.switchOptions.includes(val))
-        if (!script.modeOptions.includes(script.mode)) script.mode = "$DEFAULT"
-
-        const oldKeyC = script.keyc
-        script.keyc = getKEYCName(scripts)
-        compileFile.setSettings(getSettingsObject(script))
-
-        const inputVectors = compileFile.getInputVectors()
-        for (const inputVec in inputVectors) {
-            if (!script.inputVectors[inputVec]) script.inputVectors[inputVec] = inputVectors[inputVec]
-        }
-        for (const inputVec in script.inputVectors) {
-            if (!inputVectors[inputVec]) delete script.inputVectors[inputVec]
-            else if (inputVectors[inputVec].length !== script.inputVectors[inputVec].length) script.inputVectors[inputVec] = inputVectors[inputVec]
-        }
-        
-        compileFile.setInputVectors(script.inputVectors)
-        compileFile.compile(path.join(keycFilesPath, script.keyc))
-
-        if (script.shortcut !== "NONE") {
-            globalShortcut.unregister(script.shortcut)
-            addShortcut(script)
-        }
-
-        let title = location.replaceAll("\\", "/")
-        title = title.slice(title.lastIndexOf("/") + 1)
-
-        let settingsTitle = compileFile.getSettings().name
-
-        if (settingsTitle !== "") {
-            title = settingsTitle
-        }
-
-        script.title = title
-
-        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
-        await fs.rm(path.join(keycFilesPath, oldKeyC))
-        return title // return [true, title]
-    }
-    catch (err) {
-        dialog.showErrorBox("Reloaded Script Error", `There was an error when reloading the script. This is most likely from a change that caused an error in your script, or an error from handling a file. The script has not been updated.\n${err}`)
-        return false
-    }
-})
-
-
-ipcMain.handle('save-script', async (event, location, options, forceRecompile = true) => {
-    const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
-
-    if (options.shortcut !== "NONE") {
-        if (scripts?.[location]?.shortcut !== options.shortcut) {
-            const check = checkValidShortcut(options.shortcut)
-            if (check === 10) dialog.showErrorBox("Conflicting Shortcut", `The shortcut ${options.shortcut} is already in use. Choose another one.`)
-            if (check === 20) dialog.showErrorBox("Invalid Shortcut", `The shortcut ${options.shortcut} might be invalid. Choose another one.`)
-            if (check === 10 || check === 20) return false
-        }
-    }
-
-    if (isNaN(options.repeat) && options.repeat !== "OFF" && options.repeat !== "ON") {
-        dialog.showErrorBox("Invalid Repeat Value", `${options.repeat} is an invalid repeat value. Choose a positive whole number, "OFF", or "ON".`)
-        return false
-    }
-    if (!isNaN(options.repeat) && (Number(options.repeat) <= 0 || Number(options.repeat) % 1 > 0)) {
-        dialog.showErrorBox("Invalid Repeat Value", `${options.repeat} is an invalid repeat value. Choose a positive whole number, "OFF", or "ON".`)
-        return false
-    }
-
-    if (scripts?.[location]?.shortcut && scripts?.[location]?.shortcut !== "NONE") {
-        globalShortcut.unregister(scripts[location].shortcut)
-    }
-
-    if (options.mode === scripts?.[location]?.mode && JSON.stringify(options.switches) === JSON.stringify(scripts?.[location]?.switches) && !forceRecompile) {
-        scripts[location].shortcut = options.shortcut
-        scripts[location].repeat = options.repeat
-        addShortcut(scripts[location])
-
-        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
-        return true
-    }
-
-    const originalScriptInfo = JSON.parse(JSON.stringify(scripts[location]))
-
-    try {
-        await fs.rm(path.join(keycFilesPath, scripts[location].keyc), { force: true })
-
-        const compileFile = new Compiler(location)
-        compileFile.setSettings(getSettingsObject(options))
-        compileFile.setInputVectors(options.inputVectors)
-
-        options.keyc = getKEYCName(scripts)
-        compileFile.compile(path.join(keycFilesPath, options.keyc))
-
-        scripts[location] = options
-        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
-
-        addShortcut(options)
-        return true
-    }
-    catch (err) {
-        dialog.showErrorBox("An Error Occured", `Error while trying to load script in ${location} (it contains an error, or error while loading or writing to a file).\n${err}`)
-        addShortcut(originalScriptInfo)
-        return false
-    }
-})
-
-
 ipcMain.handle('remove-script', async (event, location) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
 
-    for (const script in scripts) {
-        if (script !== location) continue
+    if (scripts[location]) return true
 
-        try {
-            await fs.rm(path.join(keycFilesPath, scripts[script].keyc), { force: true })
-            if (scripts[script].shortcut !== "NONE") globalShortcut.unregister(scripts[script].shortcut)
+    try {
+        if (scripts[location].SHORTCUT !== null) globalShortcut.unregister(scripts[location].SHORTCUT)
 
-            delete scripts[script]
-            await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+        delete scripts[location]
+        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
 
-            return true
-        }
+        return true
+    }
 
-        catch (err) {
-            dialog.showErrorBox("An Error Occured", `The script located in "${script}" could not be removed.\n${err}`)
-            return false
-        }
+    catch (err) {
+        dialog.showErrorBox("An Error Occured", `The script located in "${location}" could not be removed.\n${err}`)
+        return false
     }
 })
 
 
-ipcMain.handle('open-script', async (event, location) => {
-    shell.openPath(location)
+ipcMain.handle('save-script', async (location, options) => {
+    const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
+    const didFix = fixInputs(location, scripts[location])
+
+    if (validateInputs(scripts[location].inputValues, options) !== true) {
+        if (didFix) {
+            await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+            return "RELOAD"
+        }
+
+        return false
+    }
+
+    await fs.writeFile(scriptsPath, JSON.stringify(options))
+    return true
 })
 
 
-ipcMain.handle('get-script-options', async (event, location) => {
-    const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
-    return scripts[location]
-})
+ipcMain.handle('load-new-script', async () => {
+    const { canceled: cancelled, filePaths } = await dialog.showOpenDialog({
+        title: "Select a Simkey Script",
+        properties: ["openFile"],
+        filters: [
+            { name: 'Simkey Files', extensions: ["simkey", "skey", "txt"] }
+        ]
+    })
 
+    if (cancelled) {
+        return false
+    }
 
-ipcMain.handle('run-stop-script', async (event, location) => {
-    const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
-    return terminateOrRun(scripts[location].keyc, scripts[location])
+    try {
+        const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
+
+        if (scripts[filePaths[0]]) {
+            dialog.showErrorBox("Script is Already Loaded", `The script located in ${filePaths[0]} is already loaded. To reload, click the reload button in the scripts menu.`)
+            return false
+        }
+
+        const openFile = new Interpret(filePaths[0])
+
+        let title = filePaths[0].replaceAll("\\", "/")
+        title = title.slice(title.lastIndexOf("/") + 1)
+
+        const { INPUTS, VALUES } = openFile.getInputs()
+
+        scriptInfo = {
+            ...openFile.getMeta(),
+            validInputs: INPUTS,
+            inputValues: VALUES
+        }
+
+        if (scriptInfo.TITLE.length > 1) scriptInfo.TITLE = title
+
+        if (SHORTCUT !== null && !addShortcut(scriptInfo.SHORTCUT, filePaths[0])) {
+            dialog.showErrorBox("An Error Occured", `Shortcut in the SETTINGS section of Simkey script is invalid or is already taken by another program or script. No shortcut has been set for this script.`)
+            scriptInfo.SHORTCUT = null
+        }
+
+        scripts[filePaths[0]] = scriptInfo
+        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+
+        return [scriptInfo.TITLE, filePaths[0]]
+    }
+
+    catch (err) {
+        dialog.showErrorBox("An Error Occured", `Error occured while loading INPUTS from the file. ERROR:\n${err}`)
+    }
 })
 
 
@@ -435,89 +377,3 @@ ipcMain.handle('listen-cursor', async (event, switchOn) => {
 ipcMain.handle('send-message', async (event, message) => {
     dialog.showMessageBox({ message: message, buttons: ["OK"] })
 })
-
-
-function getKEYCName(scripts) {
-    let keycName, noMatches = false
-    while (!noMatches) {
-        keycName = getRandomKEYCName()
-        noMatches = true
-        for (const script in scripts) {
-            if (scripts[script].keyc === keycName) {
-                noMatches = false
-                break
-            }
-        }
-    }
-    return keycName
-}
-
-function getRandomKEYCName() {
-    const randomChars = ['a', 'b', 'c', 'd', 'e', 'f', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    let name = ""
-    for (let i = 0; i < 15; i++) {
-        name += randomChars[Math.floor(Math.random() * (randomChars.length - 1))]
-    }
-    return name + ".keyc"
-}
-
-
-function getSettingsObject(scriptInfo) {
-    const settings = {
-        [scriptInfo.mode]: true
-    }
-    for (const switsh of scriptInfo.switches) {
-        settings[switsh] = true
-    }
-    return settings
-}
-
-
-function spawnWithCommand(scriptInfo) {
-    const exeFilepath = path.resolve(__dirname, RunKeyCExePath)
-    const keycFilePath = path.join(keycFilesPath, scriptInfo.keyc)
-    return spawn(exeFilepath, [keycFilePath, scriptInfo.repeat])
-}
-
-
-function addShortcut(scriptInfo) {
-    if (scriptInfo.shortcut === "NONE") return
-    globalShortcut.register(scriptInfo.shortcut, () => {
-        terminateOrRun(scriptInfo.keyc, scriptInfo)
-    })
-}
-
-
-function terminateOrRun(keycFileName, scriptInfo) {
-    if (currentExecProcesses[keycFileName]) {
-        currentExecProcesses[keycFileName].kill("SIGKILL")
-        delete currentExecProcesses[keycFileName]
-        mainWindow.webContents.send("run-message", 1)
-    }
-    else {
-        currentExecProcesses[keycFileName] = spawnWithCommand(scriptInfo)
-        mainWindow.webContents.send("run-message", 1)
-        currentExecProcesses[keycFileName].on('exit', () => {
-            delete currentExecProcesses[keycFileName]
-            mainWindow.webContents.send("run-message", 0)
-        })
-    }
-}
-
-
-function checkValidShortcut(shortcut) {
-    try {
-        if (globalShortcut.isRegistered(shortcut)) {
-            return 10
-        }
-    }
-    catch (err) {
-        return 20
-    }
-    globalShortcut.register(shortcut, () => { })
-    if (!globalShortcut.isRegistered(shortcut)) {
-        return 20
-    }
-    globalShortcut.unregister(shortcut)
-    return true
-}
