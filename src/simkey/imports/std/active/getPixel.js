@@ -33,8 +33,11 @@ function getPixel(INFO, num1OrVector, num2) {
         y = num2
     }
 
-    // Move to rounded x,y
-    return INFO.ROBOT.getPixel(x, y)
+    const res = [0, 0, 0]
+    INFO.ROBOT.getPixelColor(x, y, res)
+
+    // Return array
+    return res
 }
 
 module.exports = { FUNCTION: getPixel, TAKES: { PARAMS: "[VECTOR | NUM, NUM:OPTIONAL]" }}

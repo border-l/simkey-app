@@ -34,7 +34,7 @@ function cursorDirect(INFO, num1OrVector, num2) {
     }
 
     // Move to rounded x,y
-    INFO.ROBOT.cursorNA(Math.round(x), Math.round(y))
+    INFO.ROBOT.setCursorNA(Math.round(x), Math.round(y))
 }
 
 module.exports = { FUNCTION: cursorDirect, TAKES: { PARAMS: "[VECTOR | NUM, NUM:OPTIONAL]", BLOCK: false } }

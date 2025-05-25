@@ -1,12 +1,11 @@
 const { app, BrowserWindow, ipcMain, dialog, globalShortcut, screen, shell } = require('electron')
 const path = require('path')
 const started = require('electron-squirrel-startup')
-const asar = require("@electron/asar")
 
 const fs = require('fs-extra')
 const appVersion = "v" + app.getVersion()
 const scriptsPath = path.join(app.getPath('userData'), appVersion, 'scripts.json')
-const simkeyPath = path.join(process.resourcesPath, 'simkey', 'SimkeyInterpreter.js')
+const simkeyPath = path.join(app.getAppPath(), 'src', 'simkey', 'SimkeyInterpreter.js')
 
 const Interpret = require(simkeyPath)
 
@@ -156,14 +155,6 @@ function validateShortcut(shortcut) {
 
 
 function fixInputs(location, scriptInfo, inputs = null) {
-    // If inputs exists, forget, otherwise do the following
-    // Get current script inputs, Interpret(location).getInputs()
-    // Update the scriptInfo.validInputs key
-    // Go through each of the current inputs values in scriptInfo.
-    // Doesn't exist now? delete
-    // Doesn't work now? set to default
-    // Returns true if changed, false otherwise.
-    // Mutates scriptInfo. Should be saved by caller after if true.
     inputs = inputs || (new Interpret(location)).getInputs()
     scriptInfo.validInputs = inputs.INPUTS
     let altered = false
@@ -312,7 +303,7 @@ ipcMain.handle('load-new-script', async () => {
 
         if (scriptInfo.TITLE.length > 1) scriptInfo.TITLE = title
 
-        if (SHORTCUT !== null && !addShortcut(scriptInfo.SHORTCUT, filePaths[0])) {
+        if (scriptInfo.SHORTCUT !== null && !addShortcut(scriptInfo.SHORTCUT, filePaths[0])) {
             dialog.showErrorBox("An Error Occured", `Shortcut in the SETTINGS section of Simkey script is invalid or is already taken by another program or script. No shortcut has been set for this script.`)
             scriptInfo.SHORTCUT = null
         }

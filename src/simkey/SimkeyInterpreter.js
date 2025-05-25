@@ -17,8 +17,6 @@ const getExport = require("./interpreter/importing/getExport")
 const ThrowError = require("./interpreter/errors/ThrowError")
 const fs = require("fs")
 
-const deepClone = require("./interpreter/helpers/deepClone")
-
 class Interpreter {
     #Interpreter
 

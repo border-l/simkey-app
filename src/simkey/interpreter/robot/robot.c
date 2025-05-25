@@ -2,7 +2,8 @@
 #include <windows.h>
 #include <stdio.h>
 
-__declspec(dllexport) void keyDown(unsigned char key) {
+__declspec(dllexport) void keyDown(unsigned char key)
+{
     INPUT keyInput;
     keyInput.type = INPUT_KEYBOARD;
     keyInput.ki.wScan = MapVirtualKey(key, MAPVK_VK_TO_VSC);
@@ -13,7 +14,8 @@ __declspec(dllexport) void keyDown(unsigned char key) {
     SendInput(1, &keyInput, sizeof(INPUT));
 }
 
-__declspec(dllexport) void keyUp(unsigned char key) {
+__declspec(dllexport) void keyUp(unsigned char key)
+{
     INPUT keyInput;
     keyInput.type = INPUT_KEYBOARD;
     keyInput.ki.wScan = MapVirtualKey(key, MAPVK_VK_TO_VSC);
@@ -24,7 +26,8 @@ __declspec(dllexport) void keyUp(unsigned char key) {
     SendInput(1, &keyInput, sizeof(INPUT));
 }
 
-__declspec(dllexport) void mouseDown(int button) {
+__declspec(dllexport) void mouseDown(int button)
+{
     DWORD event;
     switch (button) {
         case 0:
@@ -51,7 +54,8 @@ __declspec(dllexport) void mouseDown(int button) {
     SendInput(1, &mouseInput, sizeof(INPUT));
 }
 
-__declspec(dllexport) void mouseUp(int button) {
+__declspec(dllexport) void mouseUp(int button)
+{
     DWORD event;
     switch (button) {
         case 0:
@@ -78,7 +82,8 @@ __declspec(dllexport) void mouseUp(int button) {
     SendInput(1, &mouseInput, sizeof(INPUT));
 }
 
-__declspec(dllexport) void setCursor(int x, int y) {
+__declspec(dllexport) void setCursor(int x, int y)
+{
     INPUT mouseInput;
     mouseInput.type = INPUT_MOUSE;
     mouseInput.mi.dx = (x * 65535) / GetSystemMetrics(SM_CXSCREEN);
@@ -90,7 +95,8 @@ __declspec(dllexport) void setCursor(int x, int y) {
     SendInput(1, &mouseInput, sizeof(INPUT));
 }
 
-__declspec(dllexport) void setCursorNA(int x, int y) {
+__declspec(dllexport) void setCursorNA(int x, int y)
+{
     INPUT mouseInput;
     mouseInput.type = INPUT_MOUSE;
     mouseInput.mi.dx = x;
@@ -102,11 +108,13 @@ __declspec(dllexport) void setCursorNA(int x, int y) {
     SendInput(1, &mouseInput, sizeof(INPUT));
 }
 
-__declspec(dllexport) void setCursorR(int x, int y) {
+__declspec(dllexport) void setCursorR(int x, int y)
+{
     SetCursorPos(x, y);
 }
 
-__declspec(dllexport) void scroll(int amount) {
+__declspec(dllexport) void scroll(int amount)
+{
     INPUT mouseInput;
     mouseInput.type = INPUT_MOUSE;
     mouseInput.mi.dx = 0;
@@ -118,19 +126,22 @@ __declspec(dllexport) void scroll(int amount) {
     SendInput(1, &mouseInput, sizeof(INPUT));
 }
 
-__declspec(dllexport) void getCursor(int* coords) {
+__declspec(dllexport) void getCursor(int* coords)
+{
     POINT p;
     GetCursorPos(&p);
     coords[0] = p.x;
     coords[1] = p.y;
 }
 
-__declspec(dllexport) void getScreenSize(int* size) {
+__declspec(dllexport) void getScreenSize(int* size)
+{
     size[0] = GetSystemMetrics(SM_CXSCREEN);
     size[1] = GetSystemMetrics(SM_CYSCREEN);
 }
 
-__declspec(dllexport) void getPixelColor(int x, int y, int* rgb) {
+__declspec(dllexport) void getPixelColor(int x, int y, int* rgb)
+{
     HDC hdc = GetDC(NULL);
     COLORREF color = GetPixel(hdc, x, y);
     ReleaseDC(NULL, hdc);

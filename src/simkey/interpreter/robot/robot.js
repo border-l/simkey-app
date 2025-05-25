@@ -2,75 +2,46 @@ const path = require("path")
 const mapping = require("./mapping")
 const ThrowError = require("../errors/ThrowError")
 
-// Boilerplate to access lib functions
-const ffi = require("ffi-napi")
-const ref = require("ref-napi")
-const intArrayType = ref.refType(ref.types.int)
-const libPath = path.resolve(__dirname, 'robot')
-const robot = ffi.Library(libPath, {
-    'keyDown': ['void', ['uchar']],
-    'keyUp': ['void', ['uchar']],
-    'mouseDown': ['void', ['int']],
-    'mouseUp': ['void', ['int']],
-    'setCursor': ['void', ['int', 'int']],
-    'setCursorR': ['void', ['int', 'int']],
-    'setCursorNA': ['void', ['int', 'int']],
-    'scroll': ['void', ['int']],
-    'getCursor': ['void', [intArrayType]],
-    'getScreenSize': ['void', [intArrayType]],
-    'getPixelColor': ['void', ['int', 'int', intArrayType]]
-})
+const koffi = require("koffi")
+const lib = koffi.load(path.resolve(__dirname, 'robot.dll'))
+
+const keyDown = lib.func("void keyDown(unsigned char key)")
+const keyUp = lib.func("void keyUp(unsigned char key)")
+const mouseDown = lib.func("void mouseDown(int button)")
+const mouseUp = lib.func("void mouseUp(int button)")
+const setCursor = lib.func("void setCursor(int x, int y)")
+const setCursorNA = lib.func("void setCursorNA(int x, int y)")
+const setCursorR = lib.func("void setCursorR(int x, int y)")
+const scroll = lib.func("void scroll(int amount)")
+const getCursor = lib.func("void getCursor(_Out_ int* coords)")
+const getScreenSize = lib.func("void getScreenSize(_Out_ int* size)")
+const getPixelColor = lib.func("void getPixelColor(int x, int y, _Out_ int* rgb)")
+
 
 // Sleeps with granularity of about 5ms?
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// Sends an input with key name and whether to send down or up
+
+// Sends an input with key and isDown
 function send(input) {
     if (!Array.isArray(input)) ThrowError(2600, { AT: "non-array given to robot.send function" })
+
     const [key, down] = input
     const map = mapping[key]
+
     if (map === undefined) ThrowError(2600, { AT: key })
 
     if (map.shift === null) {
-        down ? robot.mouseDown(map.code) : robot.mouseUp(map.code)
+        down ? mouseDown(map.code) : mouseUp(map.code)
         return
     }
 
-    const send = down ? robot.keyDown : robot.keyUp
-    if (map.shift) send(mapping.SHIFT.code)
-    send(map.code)
+    const keyFunc = down ? keyDown : keyUp
+    if (map.shift) keyFunc(mapping.SHIFT.code)
+    keyFunc(map.code)
 }
 
-// C function, gets current cursor position
-function getCursor() {
-    const coords = Buffer.alloc(2 * ref.types.int.size)
-    robot.getCursor(coords)
-    return BufferToArray(coords)
-}
 
-// C function, gets pixel at x,y
-function getPixel(x, y) {
-    const color = Buffer.alloc(3 * ref.types.int.size)
-    robot.getPixelColor(x, y, color)
-    return BufferToArray(color)
-}
-
-// C function, gets screen size
-function getScreenSize() {
-    const size = Buffer.alloc(2 * ref.types.int.size)
-    robot.getScreenSize(size)
-    return BufferToArray(size)
-}
-
-// Converts a buffer to array by reading 32 bits each time
-function BufferToArray(buff) {
-    const res = []
-    for (let i = 0; i < buff.length; i+= 4) {
-        res.push(buff.readInt32LE(i))
-    }
-    return res
-}
-
-module.exports = {send, cursor: robot.setCursor, cursorR: robot.setCursorR, cursorNA: robot.setCursorNA, scroll: robot.scroll, sleep, getCursor, getPixel, getScreenSize}
+module.exports = { send, setCursor, setCursorR, setCursorNA, scroll, sleep, getCursor, getScreenSize, getPixelColor }

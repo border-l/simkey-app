@@ -34,7 +34,7 @@ function cursor(INFO, num1OrVector, num2) {
     }
 
     // Move to rounded x,y
-    INFO.ROBOT.cursor(Math.round(x), Math.round(y))
+    INFO.ROBOT.setCursor(Math.round(x), Math.round(y))
 }
 
 module.exports = { FUNCTION: cursor, TAKES: { PARAMS: "[VECTOR | NUM, NUM:OPTIONAL]", BLOCK: false } }
