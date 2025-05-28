@@ -39,10 +39,10 @@ const running = {};
             .then(scripts => {
                 for (const script in scripts) {
                     if (scripts[script].SHORTCUT === null) continue
-                    if (addShortcut(scripts[script].SHORTCUT, script) !== true) throw Error()
+                    if (addShortcut(scripts[script].SHORTCUT, script) !== true) throw Error(`${scripts[script].TITLE} — ${scripts[script].SHORTCUT}`)
                 }
             })
-            .catch((_) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts. A shortcut may be invalid or already taken by another program.`))
+            .catch((err) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts. A shortcut may be invalid or already taken by another program: ${err.message}.`))
     }
 
     catch (err) {
@@ -73,7 +73,7 @@ function createWindow() {
         icon: path.join(__dirname, 'assets/main_logo.png'),
         webPreferences: {
             preload: path.join(__dirname, 'mainPreload.js'),
-            devTools: false
+            devTools: true
         },
     })
 
@@ -181,7 +181,7 @@ async function toggleScript(path) {
     if (running[path] !== undefined) {
         running[path].stop()
         delete running[path]
-        mainWindow.webContents.send("run-message", [path, 0])
+        mainWindow.webContents.send("run-message", { path, running: false, error: null })
         return
     }
 
@@ -191,16 +191,16 @@ async function toggleScript(path) {
     if (fixInputs(path, scripts[path], running[path].getInputs())) await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
 
     running[path].setInputs(scripts[path].inputValues)
-    mainWindow.webContents.send("run-message", [path, 1])
+    mainWindow.webContents.send("run-message", { path, running: true, error: null })
 
     try {
         await running[path].run()
         delete running[path]
-        mainWindow.webContents.send("run-message", [path, 0])
+        mainWindow.webContents.send("run-message", { path, running: false, error: null })
     }
     catch (err) {
-        /* Some way to send it */ delete running[path]
-        mainWindow.webContents.send("run-message", [path, 0])
+        delete running[path]
+        mainWindow.webContents.send("run-message", { path, running: false, error: err.message })
     }
 }
 
@@ -267,6 +267,15 @@ ipcMain.handle('remove-script', async (event, location) => {
 ipcMain.handle('save-script', async (event, location, options) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
     const didFix = fixInputs(location, scripts[location])
+
+    if ((isNaN(Number(options.REPEAT)) || options.REPEAT === "") && 
+        options.repeat !== "true" && options.repeat !== "false") {
+        return false
+    }
+
+    if (validateShortcut(options.SHORTCUT) !== true) {
+        return false
+    }
 
     if (validateInputs(scripts[location].validInputs, scripts[location].inputValues) !== true) {
         if (didFix) {

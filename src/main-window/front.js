@@ -18,6 +18,13 @@ const loadButton = document.getElementById("load-button")
 const utilsButton = document.getElementById("utils-button")
 
 
+// Important modal elements
+const modalLayer = document.getElementById("modal-layer")
+const modalTitle = document.getElementById("modal-title")
+const modalText = document.getElementById("modal-text")
+const modalClose = document.getElementById("modal-close")
+
+
 // Important components
 const components = {
     chosenSwitch: (name) => {
@@ -160,6 +167,8 @@ utilsButton.addEventListener('click', handleUtilsButton)
 
 configExit.addEventListener('click', () => setDisableConfig(true))
 
+modalClose.addEventListener('click', handleModalClose)
+
 
 // Keep track of what is currently being configured
 let curConfig = {}
@@ -169,9 +178,11 @@ let running = {}
 
 
 // Listen to scripts running and exiting
-// window.electron.runListener((event, message) => {
-//     message === 0 ? runButton.innerText = "🚀 Run" : runButton.innerText = "🛑 Stop"
-// })
+window.electron.runListener((event, message) => {
+    running[message.path] = message.running
+    if (curLocation === message.path) message.running ? runButton.innerText = "🛑 Stop" : runButton.innerText = "🚀 Run"
+    if (message.error !== null) errorModal("Error while running script", `Path: ${message.path}. Error: \n${message.error}`)
+})
 
 
 /*....... Functions for listeners to add on elements .......*/
@@ -315,7 +326,20 @@ async function handleLoadButton() {
 
 
 async function saveConfig() {
-    await window.electron.saveScript(curLocation, curConfig)
+    const saved = await window.electron.saveScript(curLocation, curConfig)
+
+    if (saved === "RELOAD") {
+        alertToast(`Script's inputs changed; config reloaded.`)
+        setDisableConfig(true)
+    }
+
+    else if (!saved) {
+        alertToast(`Invalid configuration!`)
+        curConfig = JSON.parse(JSON.stringify(initialConfig))
+
+    }
+
+    else saveToast()
 }
 
 
@@ -326,6 +350,11 @@ async function handleRunButton() {
 
 async function handleUtilsButton() {
     await window.electron.openUtils()
+}
+
+
+function handleModalClose() {
+    modalLayer.classList.add("hidden")
 }
 
 
@@ -343,13 +372,14 @@ function setDisableConfig(disable) {
     if (!disable) {
         configPanel.classList.remove("opacity-low")
         runButton.classList.remove("opacity-low")
-        // saveButton.classList.remove("opacity-low")
+        if (running[curLocation]) runButton.innerText = "🛑 Stop"
+        else runButton.innerText = "🚀 Run"
     }
     else {
+        runButton.innerText = "🚀 Run"
         configOtherInputs.classList.add("hidden")
         configPanel.classList.add("opacity-low")
         runButton.classList.add("opacity-low")
-        // saveButton.classList.add("opacity-low")
         configShortcut.value = ""
         configRepeat.value = "OFF"
         setOptions(["$DEFAULT"], [])
@@ -387,6 +417,44 @@ function addSwitches(switches) {
         const switchElement = components.chosenSwitch(switsh)
         chosenSwitches.append(switchElement)
     }
+}
+
+
+function errorModal(title, message) {
+    modalLayer.classList.remove("hidden")
+    modalTitle.innerText = title
+    modalText.innerText = message
+}
+
+
+function saveToast() {
+    Toastify({
+        text: "Saved!",
+        duration: 1000,
+        close: false,
+        style: {
+            background: "linear-gradient(to right rgb(67, 194, 62)416c,rgb(118, 255, 64))",
+            color: "#fff",
+            borderRadius: "10px",
+            padding: "15px",
+            fontWeight: "bold"
+        }
+    }).showToast()
+}
+
+
+function alertToast(message) {
+    Toastify({
+        text: message,
+        duration: 2000,
+        style: {
+            background: "linear-gradient(to right, #ff416c, #ff4b2b)",
+            color: "#fff",
+            borderRadius: "10px",
+            padding: "15px",
+            fontWeight: "bold"
+        }
+    }).showToast();
 }
 
 

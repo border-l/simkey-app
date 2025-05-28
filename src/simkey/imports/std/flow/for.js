@@ -48,7 +48,7 @@ async function forLoop(INFO, BLOCK, start, end, step, variable) {
         const ended = await INFO.RUN(INFO, BLOCK)
         if (INFO.YIELD.END(ended)) break
         if (INFO.YIELD.RETURN(ended)) return ended
-        // BLOCK = deepClone(BLOCK)
+        if (INFO.CONTEXT.ABORT.signal.aborted) return
     }
 }
 

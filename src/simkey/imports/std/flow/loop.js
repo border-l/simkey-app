@@ -4,6 +4,7 @@ async function loop(INFO, BLOCK) {
         const ended = await INFO.RUN(INFO, BLOCK)
         if (INFO.YIELD.END(ended)) break
         if (INFO.YIELD.RETURN(ended)) return ended
+        if (INFO.CONTEXT.ABORT.signal.aborted) return
     }
 }
 
