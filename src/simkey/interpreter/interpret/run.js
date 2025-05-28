@@ -8,6 +8,8 @@ const returnSymbol = Symbol("RETURN_STRING")
 
 const ThrowError = require("../errors/ThrowError")
 
+const { randomUUID } = require("crypto")
+
 // Interprets the file
 async function run(context, REPEAT) {
     // Invalid REPEAT
@@ -29,6 +31,7 @@ async function run(context, REPEAT) {
             await context.model.IMPORTS[key].SETUP()
         }
 
+        // passedInfo.ERROR is an array so that reference is preserved through deep clones
         const passedInfo = {
             DEF: def,
             HELD: heldKeys,
@@ -41,21 +44,24 @@ async function run(context, REPEAT) {
                 NEXT: (val) => val === nextSymbol,
                 RETURN: (val) => Array.isArray(val) && val[0] === returnSymbol
             },
-            SHARED: {}
+            SHARED: {},
+            RUNNING: new Set(),
+            UUID: randomUUID,
+            ERROR: [null]
         }
 
         let completed = false
 
         // Interpret list
-        instructionRunner(passedInfo, instructionList, false, true).then(() => {
-            completed = true
-        })
+        instructionRunner(passedInfo, instructionList, false, true)
+            .catch(err => passedInfo.ERROR = err.message)
 
         // Check if completed or interrupted
         while (true) {
-            if (context.SIGNAL) process.exit(0)
-            if (completed) break
             await new Promise(r => setTimeout(r, 10))
+            if (context.ABORT.signal.aborted) return
+            if (passedInfo.ERROR[0] !== null) throw new Error(passedInfo.ERROR)
+            if (passedInfo.RUNNING.size === 0) break
         }
 
         // Release all held down keys

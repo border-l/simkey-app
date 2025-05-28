@@ -21,7 +21,7 @@ class Interpreter {
     #Interpreter
 
     // Interrupt signal, debug flag
-    #SIGNAL
+    #ABORT
     #debug
 
     // Script information and built-in functions
@@ -43,7 +43,7 @@ class Interpreter {
 
     constructor(fileName, debug = false) {
         this.#Interpreter = Interpreter
-        this.#SIGNAL = false
+        this.#ABORT = new AbortController()
         this.#debug = debug
         this.#fileName = fileName
         this.#script = fs.readFileSync(fileName, 'utf-8')
@@ -101,8 +101,8 @@ class Interpreter {
         this.#context = {
             update: (property, set) => {
                 switch (property) {
-                    case 'SIGNAL':
-                        this.#SIGNAL = set
+                    case 'ABORT':
+                        this.#ABORT = set
                         break
                     case 'fileName':
                         this.#fileName = set
@@ -145,7 +145,7 @@ class Interpreter {
     #getContext() {
         this.#context.Interpreter = this.#Interpreter
         this.#context.debug = this.#debug
-        this.#context.SIGNAL = this.#SIGNAL
+        this.#context.ABORT = this.#ABORT
         this.#context.fileName = this.#fileName
         this.#context.script = this.#script
         this.#context.tokens = this.#tokens
@@ -179,8 +179,7 @@ class Interpreter {
     }
 
     stop() {
-        this.#SIGNAL = true
-        this.#context.SIGNAL = true
+        this.#ABORT.abort()
     }
 }
 

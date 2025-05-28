@@ -189,7 +189,7 @@ async function openScript(location) {
 
 
 async function configureScript(location) {
-    if (curLocation !== location) {
+    if (curLocation !== location && curLocation !== null) {
         toggleSelected(curLocation, false)
     }
 
@@ -200,7 +200,7 @@ async function configureScript(location) {
     setOptions(currentOptions.validInputs.MODES, currentOptions.validInputs.SWITCHES.filter((val) => !currentOptions.inputValues[val] === true))
     addSwitches(currentOptions.validInputs.SWITCHES)
     loadOtherInputs([...currentOptions.validInputs.NUMBERS,
-    ...currentOptions.validInputs.VECTORS,
+    ...Object.keys(currentOptions.validInputs.VECTORS),
     ...currentOptions.validInputs.STRINGS])
 
     configScriptTitle.innerText = currentOptions.TITLE
@@ -209,7 +209,7 @@ async function configureScript(location) {
     else configShortcut.value = ""
 
     configRepeat.value = currentOptions.REPEAT
-    selectMode.value = currentOptions.inputValues.find(val => currentOptions.validInputs.MODES.includes(val) && currentOptions.inputValues[val] === true) || ""
+    selectMode.value = Object.keys(currentOptions.inputValues).find(val => currentOptions.validInputs.MODES.includes(val) && currentOptions.inputValues[val] === true) || ""
 
     curConfig = currentOptions
     curLocation = location
@@ -315,8 +315,7 @@ async function handleLoadButton() {
 
 
 async function saveConfig() {
-    const { location, ...configuration } = curConfig
-    await window.electron.saveScript(location, configuration)
+    await window.electron.saveScript(curLocation, curConfig)
 }
 
 
@@ -338,19 +337,19 @@ function setDisableConfig(disable) {
     selectMode.disabled = disable
     selectSwitches.disabled = disable
     runButton.disabled = disable
-    saveButton.disabled = disable
+    // saveButton.disabled = disable
     configExit.disabled = disable
 
     if (!disable) {
         configPanel.classList.remove("opacity-low")
         runButton.classList.remove("opacity-low")
-        saveButton.classList.remove("opacity-low")
+        // saveButton.classList.remove("opacity-low")
     }
     else {
         configOtherInputs.classList.add("hidden")
         configPanel.classList.add("opacity-low")
         runButton.classList.add("opacity-low")
-        saveButton.classList.add("opacity-low")
+        // saveButton.classList.add("opacity-low")
         configShortcut.value = ""
         configRepeat.value = "OFF"
         setOptions(["$DEFAULT"], [])

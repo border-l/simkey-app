@@ -38,14 +38,15 @@ const running = {};
             .then(data => JSON.parse(data))
             .then(scripts => {
                 for (const script in scripts) {
-                    if (addShortcut(scripts[script], script) !== true) throw Error("")
+                    if (scripts[script].SHORTCUT === null) continue
+                    if (addShortcut(scripts[script].SHORTCUT, script) !== true) throw Error()
                 }
             })
             .catch((_) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts. A shortcut may be invalid or already taken by another program.`))
     }
 
     catch (err) {
-        await fs.writeFile(scriptsPath, JSON.stringify({}, null, 2))
+        await fs.writeFile(scriptsPath, JSON.stringify({}, null, 4))
     }
 })()
 
@@ -89,8 +90,8 @@ function validateSingleInput(value, type, bounds) {
     if ((type === "MODE" || type === "SWITCH") && typeof value !== "boolean") return false
     if (type === "STRING" && typeof value !== "string") return false
     if (type === "NUMBER" && (isNaN(value) || typeof value !== "number")) return false
-    if (type === "VECTOR" && (!Array.isArray(value) 
-        || value.some(val => isNaN(val) || typeof val !== "number") 
+    if (type === "VECTOR" && (!Array.isArray(value)
+        || value.some(val => isNaN(val) || typeof val !== "number")
         || value.length < bounds[0] || value.length > bounds[1])) return false
 
     return true
@@ -187,13 +188,27 @@ async function toggleScript(path) {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
 
     running[path] = new Interpret(path)
-    if (fixInputs(path, scripts[path], running[path].getInputs())) await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+    if (fixInputs(path, scripts[path], running[path].getInputs())) await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
 
     running[path].setInputs(scripts[path].inputValues)
     mainWindow.webContents.send("run-message", [path, 1])
 
-    try { await running[path].run() }
-    catch (err) { /* Some way to send it */ }
+    try {
+        await running[path].run()
+        delete running[path]
+        mainWindow.webContents.send("run-message", [path, 0])
+    }
+    catch (err) {
+        /* Some way to send it */ delete running[path]
+        mainWindow.webContents.send("run-message", [path, 0])
+    }
+}
+
+
+function basenameNS(filePath) {
+    let base = path.basename(filePath)
+    base.slice(0, base.indexOf("."))
+    return base
 }
 
 
@@ -206,7 +221,7 @@ ipcMain.handle('open-script', async (event, location) => {
 
 ipcMain.handle('get-script-options', async (event, location) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
-    if (fixInputs(location, scripts[location])) await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+    if (fixInputs(location, scripts[location])) await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
     return scripts[location]
 })
 
@@ -221,7 +236,7 @@ ipcMain.handle('load-scripts', async () => {
     const scriptArray = []
 
     for (const script in scripts) {
-        scriptArray.push([scripts[script].title, script])
+        scriptArray.push([scripts[script].TITLE, script])
     }
 
     return scriptArray
@@ -231,13 +246,13 @@ ipcMain.handle('load-scripts', async () => {
 ipcMain.handle('remove-script', async (event, location) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
 
-    if (scripts[location]) return true
+    if (!scripts[location]) return false
 
     try {
         if (scripts[location].SHORTCUT !== null) globalShortcut.unregister(scripts[location].SHORTCUT)
 
         delete scripts[location]
-        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+        await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
 
         return true
     }
@@ -249,20 +264,21 @@ ipcMain.handle('remove-script', async (event, location) => {
 })
 
 
-ipcMain.handle('save-script', async (location, options) => {
+ipcMain.handle('save-script', async (event, location, options) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
     const didFix = fixInputs(location, scripts[location])
 
-    if (validateInputs(scripts[location].inputValues, options) !== true) {
+    if (validateInputs(scripts[location].validInputs, scripts[location].inputValues) !== true) {
         if (didFix) {
-            await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+            await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
             return "RELOAD"
         }
 
         return false
     }
 
-    await fs.writeFile(scriptsPath, JSON.stringify(options))
+    scripts[location] = options
+    await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
     return true
 })
 
@@ -284,24 +300,19 @@ ipcMain.handle('load-new-script', async () => {
         const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
 
         if (scripts[filePaths[0]]) {
-            dialog.showErrorBox("Script is Already Loaded", `The script located in ${filePaths[0]} is already loaded. To reload, click the reload button in the scripts menu.`)
             return false
         }
 
         const openFile = new Interpret(filePaths[0])
-
-        let title = filePaths[0].replaceAll("\\", "/")
-        title = title.slice(title.lastIndexOf("/") + 1)
-
-        const { INPUTS, VALUES } = openFile.getInputs()
+        const { INPUTS, VARIABLES } = openFile.getInputs()
 
         scriptInfo = {
             ...openFile.getMeta(),
             validInputs: INPUTS,
-            inputValues: VALUES
+            inputValues: VARIABLES
         }
 
-        if (scriptInfo.TITLE.length > 1) scriptInfo.TITLE = title
+        if (scriptInfo.TITLE === "") scriptInfo.TITLE = basenameNS(filePaths[0])
 
         if (scriptInfo.SHORTCUT !== null && !addShortcut(scriptInfo.SHORTCUT, filePaths[0])) {
             dialog.showErrorBox("An Error Occured", `Shortcut in the SETTINGS section of Simkey script is invalid or is already taken by another program or script. No shortcut has been set for this script.`)
@@ -309,7 +320,7 @@ ipcMain.handle('load-new-script', async () => {
         }
 
         scripts[filePaths[0]] = scriptInfo
-        await fs.writeFile(scriptsPath, JSON.stringify(scripts))
+        await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
 
         return [scriptInfo.TITLE, filePaths[0]]
     }

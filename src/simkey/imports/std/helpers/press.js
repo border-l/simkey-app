@@ -1,6 +1,6 @@
 const parseExpression = require('../../../interpreter/organize/parseExpression')
 
-// Runs  a string as if it was a key expression
+// Interprets a string as if it was a (list of) key expression
 async function press(INFO, string) {
     const expressions = string.split(" ")
     const parsed = expressions.map(x => parseExpression(INFO.CONTEXT, x))

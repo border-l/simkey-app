@@ -7,16 +7,27 @@ const handleASSN = require("./handleASSN")
 const handleRET = require("./handleRET")
 const NEXT_INSTRUCTION = require('../helpers/NEXT_INSTRUCTION')
 
+
 // Runs the instructions one by one
 async function instructionRunner(passedInfo, instructionList, instantReturn = false, global = false) {
+    if (passedInfo.CONTEXT.ABORT.signal.aborted) return
+
+    // Add to RUNNING
+    const thisUUID = passedInfo.UUID()
+    passedInfo.RUNNING.add(thisUUID)
+
     // To manage variable scoping
     const keepTracked = Object.keys(passedInfo.CONTEXT.variables)
-    // const preserve = {}
+
     if (global) {
         passedInfo.CONTEXT.update("globals", keepTracked)
     }
 
+    let resolvedValue
+
     for (let i = 0; i < instructionList.length; i++) {
+        if (passedInfo.CONTEXT.ABORT.signal.aborted) return
+
         const instruction = instructionList[i]
 
         // Key expression object
@@ -29,12 +40,14 @@ async function instructionRunner(passedInfo, instructionList, instantReturn = fa
 
         // End
         if (instruction === "@end") {
-            return passedInfo.SYMBOLS.END
+            resolvedValue = passedInfo.SYMBOLS.END
+            break
         }
 
         // Next
         if (instruction === "@next") {
-            return passedInfo.SYMBOLS.NEXT
+            resolvedValue = passedInfo.SYMBOLS.NEXT
+            break
         }
 
         // Otherwise, handle imported function call
@@ -57,6 +70,7 @@ async function instructionRunner(passedInfo, instructionList, instantReturn = fa
 
                 // Run block and clean up variables
                 result = await instructionRunner(passedInfo, instruction[2][x])
+                if (passedInfo.CONTEXT.ABORT.signal.aborted) return
                 cleanUp(passedInfo.CONTEXT.variables, keepTracked)
                 break
             }
@@ -78,7 +92,8 @@ async function instructionRunner(passedInfo, instructionList, instantReturn = fa
         // Return statement
         else if (func === "RET") {
             if (instruction[1] instanceof NEXT_INSTRUCTION) continue
-            return [passedInfo.SYMBOLS.RETURN, handleRET(passedInfo.CONTEXT, instruction)]
+            resolvedValue = [passedInfo.SYMBOLS.RETURN, handleRET(passedInfo.CONTEXT, instruction)]
+            break
         }
 
         // Simkey function call
@@ -97,6 +112,7 @@ async function instructionRunner(passedInfo, instructionList, instantReturn = fa
 
                 result = await instructionRunner(passedInfo,
                     [...setters, ...passedInfo.CONTEXT.funcs[func][0]])
+                if (passedInfo.CONTEXT.ABORT.signal.aborted) return
                 result = Array.isArray(result) ? result[1] : result
 
                 removeNonGlobals(passedInfo.CONTEXT.globals, passedInfo.CONTEXT.variables, passedInfo.CONTEXT.constants)
@@ -156,23 +172,27 @@ async function instructionRunner(passedInfo, instructionList, instantReturn = fa
                 result = await passedInfo.CONTEXT.model.IMPORTS[func.substring(1)](passedInfo, ...newInstructions)
             }
 
+            if (passedInfo.CONTEXT.ABORT.signal.aborted) return
             cleanUp(passedInfo.CONTEXT.variables, keepTracked)
         }
 
         // Caller wanted instant result
         if (instantReturn) {
-            return result
+            resolvedValue = result
+            break
         }
 
         // Return further up
         if (passedInfo.YIELD.RETURN(result)) {
-            return result
+            resolvedValue = result
+            break
         }
 
         // RET next
         if (i > 0 && instructionList[i - 1][0] === "RET" && instructionList[i - 1][1] instanceof NEXT_INSTRUCTION) {
             if (result === undefined) ThrowError(2800, { AT: instruction[0] })
-            return [passedInfo.SYMBOLS.RETURN, result]
+            resolvedValue = [passedInfo.SYMBOLS.RETURN, result]
+            break
         }
 
         // ASSN next
@@ -190,9 +210,13 @@ async function instructionRunner(passedInfo, instructionList, instantReturn = fa
 
         // End now or move to next
         else if (passedInfo.YIELD.END(result) || passedInfo.YIELD.NEXT(result)) {
-            return result
+            resolvedValue = result
+            break
         }
     }
+
+    passedInfo.RUNNING.delete(thisUUID)
+    if (resolvedValue !== undefined) return resolvedValue
 }
 
 
@@ -202,19 +226,6 @@ function addTracked(variableFull, tracked) {
     tracked.includes(variableName) ? 0 : tracked.push(variableName)
 }
 
-// Sets up variables and constants under context to prepare for Simkey call
-// function prepareForParams(vars, values, constants, tracked, preserved) {
-//     for (const variable of vars) {
-//         if (tracked.includes(variable) && preserved[variable] === undefined) {
-//             const isConst = constants.includes(variable)
-//             preserved[variable] = [values[variable], isConst]
-
-//             if (isConst) {
-//                 constants.splice(constants.indexOf(variable), 1)
-//             }
-//         }
-//     }
-// }
 
 function nonGlobals(globals, variables, constants) {
     const result = {}
@@ -262,19 +273,12 @@ function addBackIn(toAdd, variables, constants) {
 
 
 // Removes the variables that are now out of scope
-function cleanUp(variables, tracked, /*constants, preserve = {}*/) {
+function cleanUp(variables, tracked) {
     for (const key in variables) {
         if (!tracked.includes(key)) {
             delete variables[key]
         }
     }
-
-    // for (const key in preserve) {
-    //     variables[key] = preserve[key][0]
-    //     if (preserve[key][1]) {
-    //         constants.push(key)
-    //     }
-    // }
 }
 
 

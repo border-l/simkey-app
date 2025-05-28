@@ -18,9 +18,23 @@ const getScreenSize = lib.func("void getScreenSize(_Out_ int* size)")
 const getPixelColor = lib.func("void getPixelColor(int x, int y, _Out_ int* rgb)")
 
 
-// Sleeps with granularity of about 5ms?
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms))
+// Sleeps with granularity of about 5ms while yielding to abort
+function sleep(ms, signal) {
+    return new Promise((resolve, reject) => {
+        if (signal.aborted) return reject(new Error('ABORTED'))
+
+        const timeout = setTimeout(() => {
+            signal.removeEventListener('abort', onAbort)
+            resolve()
+        }, ms)
+
+        const onAbort = () => {
+            clearTimeout(timeout)
+            reject(new Error('ABORTED'))
+        }
+
+        signal.addEventListener('abort', onAbort, { once: true })
+    })
 }
 
 

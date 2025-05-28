@@ -93,6 +93,7 @@
     "InputNotExist": 5000,
     "InputSeveralModesTrue": 5005,
     "InputInvalidValue": 5010,
+    "InputNoModeDefault": 5015,
     "SetNonExistent": 5100,
     "SetVectorNonArray": 5105,
     "SetIndexNonNumber": 5110,

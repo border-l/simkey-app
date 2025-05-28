@@ -11,8 +11,6 @@ function parseInputs(context) {
     let hasPassed = false
 
     parseSection(context, (tokens, token, i, section, next) => {
-        hasPassed = true
-
         // variable name and type of input (as a key in model.INPUTS)
         const varn = tokens[i + 1]
         const type = token === "SWITCH" ? token + "ES" : token + "S"
@@ -25,12 +23,14 @@ function parseInputs(context) {
 
         // Same handling
         if (token === "MODE" || token === "SWITCH") {
+            hasPassed = hasPassed || token === "MODE"
+
             context.model.INPUTS[type].push(varn)
             context.constants.push(varn)
 
             if (tokens.length > i + 2 && tokens[i + 2] === "DEFAULT") {
-                if (modeOn) ThrowError(...[])
-                modeOn = true
+                if (modeOn && token === "MODE") ThrowError(5005, { AT: varn })
+                if (token === "MODE") modeOn = true
 
                 context.variables[varn] = true
                 return i + 2
@@ -99,7 +99,7 @@ function parseInputs(context) {
         ThrowError(2905, { AT: token })
     }, (section) => section === "INPUTS")
 
-    if (!modeOn && hasPassed) ThrowError(...[])
+    if (!modeOn && hasPassed) ThrowError(5015, {})
 }
 
 module.exports = parseInputs

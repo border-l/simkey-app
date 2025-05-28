@@ -8,6 +8,7 @@ const FORMAT = {
     InputNotExist: ({ AT }) => `Input given to setInput does not exist at all or under its type. AT: ${AT}, TYPE: ${typeof AT}`,
     InputSeveralModesTrue: ({ AT }) => `Several modes have been set to true in the INPUTS object given to setInputs. AT (second): ${AT}`,
     InputInvalidValue: ({ AT, REASON }) => `Invalid value given to setInput. AT: ${AT}, REASON: ${REASON}`,
+    InputNoModeDefault: ({ AT }) => `Input modes were present yet no mode is on by default in INPUTS.`,
 
     SetNonExistent: ({ VAR, TYPE }) => `Attempting to set a non-existent variable of type ${TYPE} (USING \`SET\`). VAR: ${VAR}`, // All of these are for the `SET` instruction (in handleSET)
     SetVectorNonArray: ({ VECTOR, VALUE_TYPE }) => `Attempting to set a vector to a non-array (USING \`SET\`). VECTOR: ${VECTOR}, VALUE_TYPE: ${VALUE_TYPE}`,
