@@ -19,8 +19,7 @@
                 "nsis"
             ],
             "icon": "src/assets/main_logo.png"
-        },
-        "asar": false
+        }
     },
     "devDependencies": {
         "@electron-forge/cli": "^7.6.1",

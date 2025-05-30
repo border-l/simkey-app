@@ -164,20 +164,17 @@ function fixInputs(location, scriptInfo, inputs = null) {
     const { VARIABLES, INPUTS } = inputs
 
     scriptInfo.validInputs = inputs.INPUTS
-    let altered = false
 
     const allVariables = [...INPUTS.MODES, ...INPUTS.SWITCHES, ...INPUTS.STRINGS, ...Object.keys(INPUTS.NUMBERS), ...Object.keys(INPUTS.VECTORS)]
 
     for (const varName of allVariables) {
         if (scriptInfo.inputValues[varName] === undefined) {
             scriptInfo.inputValues[varName] = VARIABLES[varName]
-            altered = true
         }
     }
 
     for (const varName in scriptInfo.inputValues) {
         if (getType(varName, INPUTS) === null) {
-            altered = true
             delete scriptInfo.inputValues[varName]
 
             let type = getType(varName, scriptInfo.validInputs)
@@ -192,12 +189,11 @@ function fixInputs(location, scriptInfo, inputs = null) {
 
         if (!validateSingleInput(scriptInfo.inputValues[varName], getType(varName, INPUTS),
             INPUTS.VECTORS[varName] || INPUTS.NUMBERS[varName])) {
-            altered = true
             scriptInfo.inputValues[varName] = VARIABLES[varName]
         }
     }
 
-    return altered
+    return true
 }
 
 

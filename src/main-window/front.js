@@ -110,7 +110,7 @@ const components = {
     },
 
     /* MAKE THIS LOOK BETTER */
-    otherInput: (name, value) => {
+    otherInput: (name, desc, value) => {
         const container = document.createElement("div")
         container.classList.add("configure-option")
 
@@ -123,6 +123,8 @@ const components = {
         input.value = value
         input.id = `input-${name}`
         input.addEventListener('focusout', handleOtherInput.bind(null, name))
+
+        if (desc !== null) title.title = desc
 
         container.appendChild(title)
         container.appendChild(input)
@@ -218,9 +220,7 @@ async function configureScript(location) {
 
     setOptions(curConfig.validInputs.MODES, curConfig.validInputs.SWITCHES.filter((val) => !curConfig.inputValues[val] === true))
     addSwitches(curConfig.validInputs.SWITCHES)
-    loadOtherInputs([...Object.keys(curConfig.validInputs.NUMBERS),
-    ...Object.keys(curConfig.validInputs.VECTORS),
-    ...curConfig.validInputs.STRINGS])
+    loadOtherInputs()
 
     configScriptTitle.innerText = curConfig.TITLE
 
@@ -362,13 +362,13 @@ function setDisableConfig(disable) {
     }
     else {
         runButton.innerText = "🚀 Run"
+        configOtherInputs.innerHTML = ""
         configOtherInputs.classList.add("hidden")
         configPanel.classList.add("opacity-low")
         runButton.classList.add("opacity-low")
         configShortcut.value = ""
         setOptions(["$DEFAULT"], [])
         addSwitches([])
-        loadOtherInputs([])
         curLocation ? toggleSelected(curLocation, false) : 0
         configScriptTitle.innerText = "No script selected"
         curConfig = {}
@@ -485,13 +485,19 @@ function escapeString(string) {
 }
 
 
-function loadOtherInputs(otherInputs) {
+function loadOtherInputs() {
+    console.log(curConfig)
+    const otherInputs = [...Object.keys(curConfig.validInputs.VECTORS), ...Object.keys(curConfig.validInputs.NUMBERS), ...curConfig.validInputs.STRINGS]
     if (otherInputs.length === 0) return
+
     configOtherInputs.classList.remove("hidden")
     configOtherInputs.innerHTML = ""
 
     for (const input of otherInputs) {
-        const inputElement = components.otherInput(input, String(curConfig.inputValues[input]))
+        const inputElement = components.otherInput(
+            curConfig.validInputs.META[input]?.name || input,
+            curConfig.validInputs.META[input]?.description || null,
+            String(curConfig.inputValues[input]))
         configOtherInputs.append(inputElement)
     }
 }
