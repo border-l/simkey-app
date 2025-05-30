@@ -5,7 +5,7 @@ function getInputs(context) {
 
     const { MODES, SWITCHES, VECTORS, NUMBERS, STRINGS} = context.model.INPUTS
     for (const key in context.variables) {
-        if (MODES.includes(key) || SWITCHES.includes(key) || VECTORS[key] !== undefined || NUMBERS.includes(key) || STRINGS.includes(key))
+        if (MODES.includes(key) || SWITCHES.includes(key) || VECTORS[key] !== undefined || NUMBERS[key] !== undefined || STRINGS.includes(key))
             VARIABLES[key] = deepClone(context.variables[key])
     }
 

@@ -23,15 +23,15 @@ function sleep(ms, signal) {
     return new Promise((resolve, reject) => {
         if (signal.aborted) return reject(new Error('ABORTED'))
 
-        const timeout = setTimeout(() => {
-            signal.removeEventListener('abort', onAbort)
-            resolve()
-        }, ms)
-
         const onAbort = () => {
             clearTimeout(timeout)
             reject(new Error('ABORTED'))
         }
+
+        const timeout = setTimeout(() => {
+            signal.removeEventListener('abort', onAbort)
+            resolve()
+        }, ms)
 
         signal.addEventListener('abort', onAbort, { once: true })
     })

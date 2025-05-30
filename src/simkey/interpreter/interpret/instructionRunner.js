@@ -39,8 +39,8 @@ async function instructionRunner(passedInfo, instructionList, instantReturn = fa
         const func = instruction[0]
 
         // End
-        if (instruction === "@end") {
-            resolvedValue = passedInfo.SYMBOLS.END
+        if (instruction === "@break") {
+            resolvedValue = passedInfo.SYMBOLS.BREAK
             break
         }
 
@@ -209,7 +209,7 @@ async function instructionRunner(passedInfo, instructionList, instantReturn = fa
         }
 
         // End now or move to next
-        else if (passedInfo.YIELD.END(result) || passedInfo.YIELD.NEXT(result)) {
+        else if (passedInfo.YIELD.BREAK(result) || passedInfo.YIELD.NEXT(result)) {
             resolvedValue = result
             break
         }

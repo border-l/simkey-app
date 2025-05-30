@@ -4,17 +4,8 @@ const ThrowError = require("../errors/ThrowError")
 function setInputs(context, inputs) {
     let setMode = false
 
-    // 
-    // if (context.model.INPUTS.MODES.some(val => context.variables[val] !== undefined)) {
-
-    // }
-
     // Reset modes and make sure they are set to false
     context.model.INPUTS.MODES.forEach(val => context.variables[val] = false)
-
-    // if (context.variables["$DEFAULT"] === true) {
-    //     context.variables["$DEFAULT"] = false
-    // }
 
     for (const input in inputs) {
         const value = inputs[input]
@@ -58,14 +49,23 @@ function setInputs(context, inputs) {
             context.variables[input] = value
         }
 
-        else {
-            ThrowError(5010, { AT: input, REASON: "value given is not a string, boolean, or number array." })
-        }
-    }
+        else if (typeof value === "number" && !isNaN(value)) {
+            const bounds = context.model.INPUTS.NUMBERS[input]
 
-    // $DEFAULT by default
-    if (!setMode) {
-        context.variables["$DEFAULT"] = true
+            if (!bounds) {
+                ThrowError(5000, { AT: input })
+            }
+
+            if (value < bounds[0] || value > bounds[1]) {
+                ThrowError(5010, { AT: input, REASON: `number is not within bounds, number ${value}, minimum ${bounds[0]}, maximum ${bounds[1]}` })
+            }
+
+            context.variables[input] = value
+        }
+
+        else {
+            ThrowError(5010, { AT: input, REASON: "value given is not a string, boolean, number, or number array." })
+        }
     }
 }
 

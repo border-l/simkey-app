@@ -1,8 +1,6 @@
-const getArray = require("../types/getArray")
 const parseSection = require("./parseSection")
 const getString = require("../types/getString")
 const ThrowError = require("../errors/ThrowError")
-const checkVariableName = require("../helpers/checkVariableName")
 
 // Handles meta section
 module.exports = (context) => {
@@ -11,25 +9,7 @@ module.exports = (context) => {
         const firstIn = tokens[i + 1]
 
         if (firstIn === undefined) {
-            ThrowError(...[])
-        }
-
-        if (token === "REPEAT") {
-            // Number repeat
-            if (Number(firstIn)) {
-                context.model.META.REPEAT = Number(firstIn)
-            }
-            // Literal repeat (boolean)
-            else if (firstIn === "true" || firstIn === "false") {
-                context.model.META.REPEAT = firstIn === "true"
-            }
-            // Not a valid value
-            else {
-                ThrowError(2000, { AT: firstIn })
-            }
-
-            // Move along index
-            return i + 1
+            ThrowError(2025, { AT: token })
         }
 
         else if (token === "TITLE") {

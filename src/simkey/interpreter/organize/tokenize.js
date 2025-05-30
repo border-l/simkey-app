@@ -1,4 +1,4 @@
-const specials = ["for", "loop", "repeat", "if", "elseif", "else", "return", "next", "with", "async"]
+const specials = ["for", "loop", "repeat", "if", "elseif", "else", "return", "next", "with", "async", "break"]
 
 // Splits the script into tokens
 function tokenize(context) {

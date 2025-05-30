@@ -118,8 +118,8 @@ function parseInnards(context, index, depth) {
                 continue
             }
 
-            if (token === "@end") {
-                parsed.push("@end")
+            if (token === "@break") {
+                parsed.push("@break")
                 return [parsed, finalIndex]
             }
 

@@ -1,7 +1,6 @@
 // Important config elements
 const configPanel = document.getElementById("configure-container")
 const configShortcut = document.getElementById("configure-shortcut")
-const configRepeat = document.getElementById("configure-repeat")
 const selectMode = document.getElementById("select-mode")
 const selectSwitches = document.getElementById("select-switches")
 const chosenSwitches = document.getElementById("chosen-switches")
@@ -152,13 +151,9 @@ selectSwitches.addEventListener('change', handleSelectSwitchesChange)
 selectMode.addEventListener('change', handleSelectModeChange)
 
 configShortcut.addEventListener('focusout', handleShortcutInput)
-configRepeat.addEventListener('focusout', handleRepeatInput)
 
 configShortcut.addEventListener('keydown', (event) => {
     if (event.key === "Enter") handleShortcutInput()
-})
-configRepeat.addEventListener('keydown', (event) => {
-    if (event.key === "Enter") handleRepeatInput()
 })
 
 runButton.addEventListener('click', handleRunButton)
@@ -200,30 +195,32 @@ async function openScript(location) {
 
 
 async function configureScript(location) {
-    if (curLocation !== location && curLocation !== null) {
+    if (location === curLocation) {
+        return
+    }
+
+    if (curLocation !== null) {
         toggleSelected(curLocation, false)
     }
 
-    const currentOptions = await window.electron.getScriptOptions(location)
-
     setDisableConfig(true)
     setDisableConfig(false)
-    setOptions(currentOptions.validInputs.MODES, currentOptions.validInputs.SWITCHES.filter((val) => !currentOptions.inputValues[val] === true))
-    addSwitches(currentOptions.validInputs.SWITCHES)
-    loadOtherInputs([...currentOptions.validInputs.NUMBERS,
-    ...Object.keys(currentOptions.validInputs.VECTORS),
-    ...currentOptions.validInputs.STRINGS])
 
-    configScriptTitle.innerText = currentOptions.TITLE
+    curConfig = await window.electron.getScriptOptions(location)
+    curLocation = location
 
-    if (currentOptions.SHORTCUT !== null) configShortcut.value = currentOptions.SHORTCUT
+    setOptions(curConfig.validInputs.MODES, curConfig.validInputs.SWITCHES.filter((val) => !curConfig.inputValues[val] === true))
+    addSwitches(curConfig.validInputs.SWITCHES)
+    loadOtherInputs([...Object.keys(curConfig.validInputs.NUMBERS),
+    ...Object.keys(curConfig.validInputs.VECTORS),
+    ...curConfig.validInputs.STRINGS])
+
+    configScriptTitle.innerText = curConfig.TITLE
+
+    if (curConfig.SHORTCUT !== null) configShortcut.value = curConfig.SHORTCUT
     else configShortcut.value = ""
 
-    configRepeat.value = currentOptions.REPEAT
-    selectMode.value = Object.keys(currentOptions.inputValues).find(val => currentOptions.validInputs.MODES.includes(val) && currentOptions.inputValues[val] === true) || ""
-
-    curConfig = currentOptions
-    curLocation = location
+    selectMode.value = Object.keys(curConfig.inputValues).find(val => curConfig.validInputs.MODES.includes(val) && curConfig.inputValues[val] === true) || ""
 
     initialConfig = JSON.parse(JSON.stringify(curConfig))
 
@@ -248,14 +245,14 @@ async function removeScript(location) {
 
 async function handleOtherInput(name) {
     const type = getType(name, curConfig.validInputs)
-    const formatted = formatInput(document.getElementById(`input-${name}`), type)
+    const formatted = formatInput(document.getElementById(`input-${name}`).value, type)
 
     if (checkValid(formatted, type)) {
         await window.electron.sendMessage(`Your input for ${name} of type ${type} was not valid. Try again.`)
         return
     }
 
-    curConfig.inputValues[name] = value
+    curConfig.inputValues[name] = formatted
     await saveConfig()
 }
 
@@ -293,20 +290,6 @@ async function handleShortcutInput() {
 
     else if (curConfig.SHORTCUT !== configShortcut.value) {
         curConfig.SHORTCUT = configShortcut.value
-        changed = true
-    }
-
-    if (changed) {
-        await saveConfig()
-    }
-}
-
-
-async function handleRepeatInput() {
-    changed = false
-
-    if (curConfig.REPEAT !== configRepeat.value) {
-        curConfig.REPEAT = configRepeat.value
         changed = true
     }
 
@@ -362,11 +345,9 @@ function handleModalClose() {
 
 function setDisableConfig(disable) {
     configShortcut.disabled = disable
-    configRepeat.disabled = disable
     selectMode.disabled = disable
     selectSwitches.disabled = disable
     runButton.disabled = disable
-    // saveButton.disabled = disable
     configExit.disabled = disable
 
     if (!disable) {
@@ -381,7 +362,6 @@ function setDisableConfig(disable) {
         configPanel.classList.add("opacity-low")
         runButton.classList.add("opacity-low")
         configShortcut.value = ""
-        configRepeat.value = "OFF"
         setOptions(["$DEFAULT"], [])
         addSwitches([])
         loadOtherInputs([])
@@ -433,7 +413,7 @@ function saveToast() {
         duration: 1000,
         close: false,
         style: {
-            background: "linear-gradient(to right rgb(67, 194, 62)416c,rgb(118, 255, 64))",
+            background: "linear-gradient(to right, rgb(67, 194, 62),rgb(118, 192, 89))",
             color: "#fff",
             borderRadius: "10px",
             padding: "15px",
@@ -464,7 +444,7 @@ function getType(name, inputs) {
     if (inputs.MODES.includes(name)) return "MODE"
     if (inputs.SWITCHES.includes(name)) return "SWITCH"
     if (inputs.STRINGS.includes(name)) return "STRING"
-    if (inputs.NUMBERS.includes(name)) return "NUMBER"
+    if (inputs.NUMBERS[name] !== undefined) return "NUMBER"
     if (inputs.VECTORS[name] !== undefined) return "VECTOR"
     return null
 }
@@ -514,6 +494,7 @@ function loadOtherInputs(otherInputs) {
     configOtherInputs.innerHTML = ""
 
     for (const input of otherInputs) {
+        console.log(curConfig)
         const inputElement = components.otherInput(input, String(curConfig.inputValues[input]))
         configOtherInputs.append(inputElement)
     }

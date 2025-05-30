@@ -6,7 +6,8 @@ const FORMAT = {
     MetaNameAssignment: ({ AT }) => `Invalid value assignment of \`name\` \`Meta\` attribute. AT: ${AT}`,
     MetaModeAssignment: ({ AT }) => `Invalid value assignment of \`mode\` \`Meta\` attribute. AT: ${AT}`,
     MetaSwitchesAssignment: ({ AT }) => `Invalid value assignment of \`switches\` \`Meta\` attribute. Invalid \`switch\` Name. AT: ${AT}`,
-    MetaNonAttribute: ({ AT }) => `Attempted to set \`Meta\` atribute that does not exist. AT: ${AT}`,
+    MetaNonAttribute: ({ AT }) => `Attempted to set \`Meta\` attribute that does not exist. AT: ${AT}`,
+    MetaNoValue: ({ AT }) => `No value given in meta assignment. AT: ${AT}`,
 
     ArgumentMissing: ({ AT }) => `Function call (native or imported) is missing arguments. AT: ${AT}`,
     ArgumentExtra: ({ AT }) => `Function call (native or imported) received extra arguments. AT: ${AT}`,
@@ -38,12 +39,13 @@ const FORMAT = {
     ReturnWithoutValue: ({ AT }) => `Function used in return statement did not yield a value. AT : ${AT}`,
     ReturnMissingValue: ({ AT }) => `Return statement did not have a value given after it.`,
 
-    InvalidInputVectorBounds: ({ AT, REASON }) => `Invalid bounds for input vector. REASON: ${REASON}, AT: ${AT}`,
+    InvalidInputBounds: ({ AT, REASON }) => `Invalid bounds for input vector/number. AT: ${AT}, REASON: ${REASON}`,
     InvalidInputType: ({ AT }) => `Invalid input type for variable. AT: ${AT}`,
     InvalidInputDefaultValue: ({ AT, REASON }) => `Invalid default value given. AT: ${AT}, REASON: ${REASON}`,
     InvalidTypeInMBExpression: ({ AT }) => `Math or boolean expression received an object that the parser cannot handle. AT: ${AT}`,
 
-    TypeMismatch: ({ AT, EXPECTED }) => `Attempted to get variable conforming to accepted types. AT: ${AT}, EXPECTED TYPES: ${EXPECTED}`
+    TypeMismatch: ({ AT, EXPECTED }) => `Variable referred to does not exist. AT: ${AT}, EXPECTED TYPES: ${EXPECTED}`,
+    TypeMismatchVariableExists: ({ AT, EXPECTED }) => `Variable exists but does not conform to the expected types. AT: ${AT}, EXPECTED TYPES: ${EXPECTED}`
 }
 
 module.exports = { ERROR, CODE, FORMAT }

@@ -63,6 +63,7 @@ function getVariable(context, variable, expected = ["STR", "VECTOR", "NUM", "BOO
 
     // No value found compliant with expected types
     if (solution === undefined) {
+        if (context.variables[variable] !== undefined) ThrowError(2955, { AT: variable, EXPECTED: expected })
         ThrowError(2950, { AT: variable, EXPECTED: expected })
     }
 

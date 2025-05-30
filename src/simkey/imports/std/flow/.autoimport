@@ -3,3 +3,4 @@
 @./for
 @./loop
 @./repeat
+@loop_script ./loopScript

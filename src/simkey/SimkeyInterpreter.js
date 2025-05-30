@@ -33,10 +33,15 @@ class Interpreter {
 
     // References to check after organization
     #checkLater
+
+    // Stored values
     #variables
     #constants
     #globals
     #tables
+
+    // How many times script will repeat
+    #repeat
 
     // For passing private fields to other functions
     #context
@@ -47,6 +52,7 @@ class Interpreter {
         this.#debug = debug
         this.#fileName = fileName
         this.#script = fs.readFileSync(fileName, 'utf-8')
+        this.#repeat = 1
         this.#tokens = []
         this.#checkLater = []
         this.#variables = {}
@@ -59,16 +65,16 @@ class Interpreter {
             "EXPORTS": {},
             "META": {
                 "TITLE": "",
-                "REPEAT": false,
                 "VERSION": "1.0",
                 "SHORTCUT": null
             },
             "INPUTS": {
                 "MODES": [],
-                "NUMBERS": [],
                 "SWITCHES": [],
                 "STRINGS": [],
-                "VECTORS": {}
+                "NUMBERS": {},
+                "VECTORS": {},
+                "META": {}
             },
             "MACRO": []
         }
@@ -133,6 +139,9 @@ class Interpreter {
                     case 'tables':
                         this.#tables = set
                         break
+                    case 'repeat':
+                        this.#repeat = set
+                        break
                     default:
                         ThrowError(5300, { AT: property })
                 }
@@ -148,6 +157,7 @@ class Interpreter {
         this.#context.ABORT = this.#ABORT
         this.#context.fileName = this.#fileName
         this.#context.script = this.#script
+        this.#context.repeat = this.#repeat
         this.#context.tokens = this.#tokens
         this.#context.checkLater = this.#checkLater
         this.#context.model = this.#model
@@ -158,8 +168,8 @@ class Interpreter {
         this.#context.tables = this.#tables
     }
 
-    async run(repeat = false) {
-        return await run(this.#context, repeat)
+    async run() {
+        return await run(this.#context)
     }
 
     getMeta() {

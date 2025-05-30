@@ -46,7 +46,7 @@ async function forLoop(INFO, BLOCK, start, end, step, variable) {
     for (let i = start; compare(i); i += step) {
         INFO.CONTEXT.variables[variable][0] = i
         const ended = await INFO.RUN(INFO, BLOCK)
-        if (INFO.YIELD.END(ended)) break
+        if (INFO.YIELD.BREAK(ended)) break
         if (INFO.YIELD.RETURN(ended)) return ended
         if (INFO.CONTEXT.ABORT.signal.aborted) return
     }

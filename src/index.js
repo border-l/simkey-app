@@ -89,10 +89,11 @@ function createWindow() {
 function validateSingleInput(value, type, bounds) {
     if ((type === "MODE" || type === "SWITCH") && typeof value !== "boolean") return false
     if (type === "STRING" && typeof value !== "string") return false
-    if (type === "NUMBER" && (isNaN(value) || typeof value !== "number")) return false
+    if (type === "NUMBER" && ((isNaN(value) || typeof value !== "number")
+        || value < bounds[0] || (value > bounds[1] && bounds[1] !== null))) return false
     if (type === "VECTOR" && (!Array.isArray(value)
         || value.some(val => isNaN(val) || typeof val !== "number")
-        || value.length < bounds[0] || value.length > bounds[1])) return false
+        || value.length < bounds[0] || (value.length > bounds[1] && bounds[1] !== null))) return false
 
     return true
 }
@@ -102,8 +103,10 @@ function getType(name, inputs) {
     if (inputs.MODES.includes(name)) return "MODE"
     if (inputs.SWITCHES.includes(name)) return "SWITCH"
     if (inputs.STRINGS.includes(name)) return "STRING"
-    if (inputs.NUMBERS.includes(name)) return "NUMBER"
+    if (inputs.NUMBERS[name] !== undefined) return "NUMBER"
     if (inputs.VECTORS[name] !== undefined) return "VECTOR"
+
+    return null
 }
 
 
@@ -112,7 +115,7 @@ function validateInputs(inputs, values) {
 
     for (const varName in values) {
         const type = getType(varName, inputs)
-        if (!validateSingleInput(values[varName], type, inputs.VECTORS[varName])) return false
+        if (!validateSingleInput(values[varName], type, inputs.VECTORS[varName] || inputs.NUMBERS[varName])) return false
 
         if (type === "MODE" && values[varName]) {
             if (modeSet) return false
@@ -156,20 +159,40 @@ function validateShortcut(shortcut) {
 
 
 function fixInputs(location, scriptInfo, inputs = null) {
-    inputs = inputs || (new Interpret(location)).getInputs()
+    if (inputs === null) inputs = (new Interpret(location)).getInputs()
+    const { VARIABLES, INPUTS } = inputs
+
     scriptInfo.validInputs = inputs.INPUTS
     let altered = false
 
-    for (const varName in scriptInfo.inputValues) {
-        if (!inputs.INPUTS[varName]) {
+    const allVariables = [...INPUTS.MODES, ...INPUTS.SWITCHES, ...INPUTS.STRINGS, ...Object.keys(INPUTS.NUMBERS), ...Object.keys(INPUTS.VECTORS)]
+
+    for (const varName of allVariables) {
+        if (scriptInfo.inputValues[varName] === undefined) {
+            scriptInfo.inputValues[varName] = VARIABLES[varName]
             altered = true
-            delete inputs.INPUTS[varName]
+        }
+    }
+
+    for (const varName in scriptInfo.inputValues) {
+        if (getType(varName, INPUTS) === null) {
+            altered = true
+            delete scriptInfo.inputValues[varName]
+
+            let type = getType(varName, scriptInfo.validInputs)
+            type += type === "SWITCH" ? "ES" : "S"
+
+            const inGrp = scriptInfo.validInputs[type]
+            if (type === "VECTORS" || type === "NUMBERS") delete inGrp[varName]
+            else inGrp.splice(inGrp.indexOf(varName), 1)
+
             continue
         }
 
-        if (!validateSingleInput(scriptInfo.inputValues[varName], getType(varName, inputs.INPUTS), inputs.INPUTS[varName])) {
+        if (!validateSingleInput(scriptInfo.inputValues[varName], getType(varName, INPUTS),
+            INPUTS.VECTORS[varName] || INPUTS.NUMBERS[varName])) {
             altered = true
-            scriptInfo.inputValues[varName] = inputs.VARIABLES[varName]
+            scriptInfo.inputValues[varName] = VARIABLES[varName]
         }
     }
 
@@ -221,6 +244,7 @@ ipcMain.handle('open-script', async (event, location) => {
 
 ipcMain.handle('get-script-options', async (event, location) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
+    console.log(scripts)
     if (fixInputs(location, scripts[location])) await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
     return scripts[location]
 })
@@ -267,11 +291,6 @@ ipcMain.handle('remove-script', async (event, location) => {
 ipcMain.handle('save-script', async (event, location, options) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
     const didFix = fixInputs(location, scripts[location])
-
-    if ((isNaN(Number(options.REPEAT)) || options.REPEAT === "") && 
-        options.repeat !== "true" && options.repeat !== "false") {
-        return false
-    }
 
     if (validateShortcut(options.SHORTCUT) !== true) {
         return false
