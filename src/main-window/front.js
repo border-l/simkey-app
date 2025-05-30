@@ -203,10 +203,17 @@ async function configureScript(location) {
         toggleSelected(curLocation, false)
     }
 
+    let tempConfig = await window.electron.getScriptOptions(location)
+
+    if (tempConfig.err) {
+        errorModal(tempConfig.errTitle, tempConfig.errMessage)
+        return
+    }
+
     setDisableConfig(true)
     setDisableConfig(false)
 
-    curConfig = await window.electron.getScriptOptions(location)
+    curConfig = tempConfig.loaded
     curLocation = location
 
     setOptions(curConfig.validInputs.MODES, curConfig.validInputs.SWITCHES.filter((val) => !curConfig.inputValues[val] === true))
@@ -246,11 +253,6 @@ async function removeScript(location) {
 async function handleOtherInput(name) {
     const type = getType(name, curConfig.validInputs)
     const formatted = formatInput(document.getElementById(`input-${name}`).value, type)
-
-    if (checkValid(formatted, type)) {
-        await window.electron.sendMessage(`Your input for ${name} of type ${type} was not valid. Try again.`)
-        return
-    }
 
     curConfig.inputValues[name] = formatted
     await saveConfig()
@@ -301,25 +303,27 @@ async function handleShortcutInput() {
 
 async function handleLoadButton() {
     const newScript = await window.electron.loadNewScript()
-    if (newScript === false) return
+    if (newScript.err) errorModal(newScript.errTitle, newScript.errMessage)
+    if (!newScript.loaded) return
 
-    const scriptItem = components.scriptItem(newScript[0], newScript[1])
+    const scriptItem = components.scriptItem(newScript.loaded.TITLE, newScript.loaded.PATH)
     scriptMenu.append(scriptItem)
 }
 
 
 async function saveConfig() {
-    const saved = await window.electron.saveScript(curLocation, curConfig)
+    const response = await window.electron.saveScript(curLocation, curConfig)
 
-    if (saved === "RELOAD") {
-        alertToast(`Script's inputs changed; config reloaded.`)
+    if (response.reload) {
+        alertToast("Script's inputs changed; config reloaded.")
         setDisableConfig(true)
     }
 
-    else if (!saved) {
-        alertToast(`Invalid configuration!`)
+    else if (!response.saved) {
+        console.log(response)
+        if (!response.errTitle) alertToast("Invalid configuration!")
+        else errorModal(response.errTitle, response.errMessage)
         curConfig = JSON.parse(JSON.stringify(initialConfig))
-
     }
 
     else saveToast()
@@ -458,13 +462,6 @@ function formatInput(string, type) {
 }
 
 
-function checkValid(value, type) {
-    if (type === "VECTOR") return !value.some(val => isNaN(val) || typeof val !== "number")
-    if (type === "STRING") return typeof value === "string"
-    if (type === "NUMBER") return !isNaN(value) && typeof value === "number"
-}
-
-
 function escapeString(string) {
     let final = ""
     const special = {
@@ -494,7 +491,6 @@ function loadOtherInputs(otherInputs) {
     configOtherInputs.innerHTML = ""
 
     for (const input of otherInputs) {
-        console.log(curConfig)
         const inputElement = components.otherInput(input, String(curConfig.inputValues[input]))
         configOtherInputs.append(inputElement)
     }

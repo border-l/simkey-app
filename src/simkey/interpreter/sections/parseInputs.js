@@ -59,12 +59,12 @@ function parseInputs(context) {
 
             const [array, index] = getArray(context, i + 3)
             if (index >= next) ThrowError(1400, { AT: varn })
+            if (array.length < bounds[0] || (array.length > bounds[1] && bounds[1] !== null))
+                ThrowError(2910, { AT: tokens[i + 3], REASON: "vector length exceeds bounds." })
 
             try {
                 for (let x = 0; x < array.length; x++) {
                     array[x] = evaluateExpr(context, array[x])
-                    if (array[x] < bounds[0] || (array[x] > bounds[1] && bounds[1] !== null))
-                        ThrowError(2910, { AT: array[x], REASON: "value does not fit within bounds." })
                 }
             } catch (err) { ThrowError(1115, { AT: varn }) }
 

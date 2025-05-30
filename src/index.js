@@ -94,6 +94,7 @@ function validateSingleInput(value, type, bounds) {
     if (type === "VECTOR" && (!Array.isArray(value)
         || value.some(val => isNaN(val) || typeof val !== "number")
         || value.length < bounds[0] || (value.length > bounds[1] && bounds[1] !== null))) return false
+    if (type === null) return false
 
     return true
 }
@@ -210,8 +211,14 @@ async function toggleScript(path) {
 
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
 
-    running[path] = new Interpret(path)
-    if (fixInputs(path, scripts[path], running[path].getInputs())) await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
+    try {
+        running[path] = new Interpret(path)
+        if (fixInputs(path, scripts[path], running[path].getInputs())) await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
+    }
+    catch (err) {
+        mainWindow.webContents.send("run-message", { path, running: false, error: err.message })
+        return
+    }
 
     running[path].setInputs(scripts[path].inputValues)
     mainWindow.webContents.send("run-message", { path, running: true, error: null })
@@ -244,9 +251,14 @@ ipcMain.handle('open-script', async (event, location) => {
 
 ipcMain.handle('get-script-options', async (event, location) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
-    console.log(scripts)
-    if (fixInputs(location, scripts[location])) await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
-    return scripts[location]
+
+    try {
+        if (fixInputs(location, scripts[location])) await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
+        return { err: false, loaded: scripts[location] }
+    }
+    catch (err) {
+        return { err: true, errTitle: "Error with Script INPUTS", errMessage: err.message }
+    }
 })
 
 
@@ -290,24 +302,46 @@ ipcMain.handle('remove-script', async (event, location) => {
 
 ipcMain.handle('save-script', async (event, location, options) => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
-    const didFix = fixInputs(location, scripts[location])
 
-    if (validateShortcut(options.SHORTCUT) !== true) {
-        return false
+    let currentInputs
+
+    try {
+        currentInputs = await (new Interpret(location)).getInputs()
+    }
+    catch (err) {
+        return {
+            err: true,
+            errTitle: "Error While Getting INPUTS",
+            errMessage: err.message,
+            saved: false
+        }
     }
 
-    if (validateInputs(scripts[location].validInputs, scripts[location].inputValues) !== true) {
-        if (didFix) {
-            await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
-            return "RELOAD"
+    if (validateInputs(currentInputs.INPUTS, scripts[location].inputValues) !== true) {
+        fixInputs(location, scripts[location], currentInputs)
+        await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
+        return {
+            saved: false,
+            reload: true
         }
+    }
 
-        return false
+    if (validateInputs(options.validInputs, options.inputValues) !== true) return false
+
+    if (options.SHORTCUT !== null && validateShortcut(options.SHORTCUT) !== true) {
+        return {
+            saved: false,
+            reload: false
+        }
     }
 
     scripts[location] = options
     await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
-    return true
+
+    return {
+        saved: true,
+        reload: false
+    }
 })
 
 
@@ -342,19 +376,36 @@ ipcMain.handle('load-new-script', async () => {
 
         if (scriptInfo.TITLE === "") scriptInfo.TITLE = basenameNS(filePaths[0])
 
+        let err = false
+        let errTitle, errMessage = undefined
+
         if (scriptInfo.SHORTCUT !== null && !addShortcut(scriptInfo.SHORTCUT, filePaths[0])) {
-            dialog.showErrorBox("An Error Occured", `Shortcut in the SETTINGS section of Simkey script is invalid or is already taken by another program or script. No shortcut has been set for this script.`)
+            err = true
+            errTitle = "An Error Occured"
+            errMessage = "Shortcut in the SETTINGS section of Simkey script is invalid or is already taken by another program or script. No shortcut has been set for this script."
             scriptInfo.SHORTCUT = null
         }
 
         scripts[filePaths[0]] = scriptInfo
         await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
 
-        return [scriptInfo.TITLE, filePaths[0]]
+        return {
+            err,
+            errTitle, errMessage,
+            loaded: {
+                TITLE: scriptInfo.TITLE,
+                PATH: filePaths[0],
+                VERSION: scriptInfo.VERSION
+            }
+        }
     }
 
     catch (err) {
-        dialog.showErrorBox("An Error Occured", `Error occured while loading INPUTS from the file. ERROR:\n${err}`)
+        return {
+            err: true,
+            errTitle: "Error loading from file",
+            errMessage: `Error occured while loading INPUTS from the file. ERROR:\n${err}`,
+        }
     }
 })
 
@@ -401,9 +452,4 @@ ipcMain.handle('listen-cursor', async (event, switchOn) => {
             utilWindow.webContents.send("cursor-update", mousePos)
         }, 50)
     }
-})
-
-
-ipcMain.handle('send-message', async (event, message) => {
-    dialog.showMessageBox({ message: message, buttons: ["OK"] })
 })
