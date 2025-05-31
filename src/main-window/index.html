@@ -22,26 +22,27 @@
             </div>
 
             <div class="configure-option">
+                <div class="configure-option-title">Title</div>
+                <input class="configure-option-input" id="configure-title" placeholder="e.g. Autoclicker" disabled>
+            </div>
+
+            <div class="configure-option">
+                <div class="configure-option-title">Version</div>
+                <input class="configure-option-input" id="configure-version" placeholder="e.g. v0.0.1-beta" disabled>
+            </div>
+
+            <div class="configure-option">
                 <div class="configure-option-title">Shortcut</div>
                 <input class="configure-option-input" id="configure-shortcut" placeholder="e.g. CTRL+F6" disabled>
             </div>
 
+            <div id="config-switches" class="hidden non-input-margin"></div>
+
             <div class="configure-option hidden" id="configure-mode">
-                <div class="configure-option-title">Mode</div>
-
-                <select class="configure-option-select" id="select-mode" disabled>
-                    <option value="DEFAULT">$DEFAULT</option>
-                </select>
+                <div class="configure-option-title">Select Mode</div>
+                <select class="configure-option-select" id="select-mode" disabled></select>
             </div>
 
-            <div class="configure-option hidden" id="configure-switches">
-                <div class="configure-option-title">Switches</div>
-                <select class="configure-option-select" id="select-switches" disabled>
-                    <option value="">Add switch</option>
-                </select>
-            </div>
-
-            <div class="chosen-switch-container" id="chosen-switches"></div>
             <div id="config-others" class="hidden"></div>
         </div>
 

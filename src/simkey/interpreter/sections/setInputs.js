@@ -17,7 +17,7 @@ function setInputs(context, inputs) {
                 ThrowError(5000, { AT: input })
             }
 
-            if (value.length < bounds[0] || value.length > bounds[1]) {
+            if (value.length < bounds[0] || (value.length > bounds[1] && bounds[1] !== null)) {
                 ThrowError(5010, { AT: input, REASON: `given array does not fit bounds, length ${value.length}, minimum ${bounds[0]}, maximum ${bounds[1]}` })
             }
 
@@ -38,8 +38,8 @@ function setInputs(context, inputs) {
 
         else if (typeof value === "boolean") {
             if (context.model.INPUTS.MODES.includes(input)) {
-                if (setMode) ThrowError(5005, { AT: input })
-                setMode = true
+                if (setMode && value === true) ThrowError(5005, { AT: input })
+                if (value === true) setMode = true
             }
 
             else if (!context.model.INPUTS.SWITCHES.includes(input)) {
@@ -56,7 +56,7 @@ function setInputs(context, inputs) {
                 ThrowError(5000, { AT: input })
             }
 
-            if (value < bounds[0] || value > bounds[1]) {
+            if (value < bounds[0] || (value > bounds[1] && bounds[1] !== null)) {
                 ThrowError(5010, { AT: input, REASON: `number is not within bounds, number ${value}, minimum ${bounds[0]}, maximum ${bounds[1]}` })
             }
 

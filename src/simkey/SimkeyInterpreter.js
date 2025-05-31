@@ -65,7 +65,7 @@ class Interpreter {
             "EXPORTS": {},
             "META": {
                 "TITLE": "",
-                "VERSION": "1.0",
+                "VERSION": "0.0.1-alpha",
                 "SHORTCUT": null
             },
             "INPUTS": {

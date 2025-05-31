@@ -10,7 +10,7 @@
     --main-color: #1e1e1e;
     --secondary-bg: #242424;
     --text-color: #e0e0e0;
-    --hover-text-color:#b8b8b8;
+    --hover-text-color: #b8b8b8;
     --hover-bg: #333333;
     --border-color: #333333;
     --button-bg: #3f3f3f;
@@ -42,7 +42,7 @@ body {
     opacity: 25%;
 }
 
-/* For index.html */
+
 .configure-menu-container {
     display: flex;
     flex-direction: row;
@@ -104,13 +104,12 @@ body {
 }
 
 
-/* For html/configure.html */
 .configure-container {
-    background: var(--body-bg);
+    background-color: var(--body-bg);
     color: var(--text-color);
     padding: 10px;
     min-height: 100%;
-    width: 40%;
+    width: 45%;
     overflow: auto;
 }
 
@@ -118,99 +117,60 @@ body {
     margin: 10px;
     display: flex;
     margin-bottom: 10px;
-    background-color: var(--main-color);
     border-radius: 0.5rem;
+    gap: 10px;
 }
 
 .configure-option-title {
     min-height: 100%;
     font-size: 15px;
     font-weight: 500;
-    min-width: 100px;
+    min-width: 125px;
     padding: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
     background-color: var(--secondary-bg);
-    border-radius: 0.5rem 0 0 0.5rem;
+    border-radius: 0.5rem;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .configure-option-input,
 .configure-option-select {
     width: 100%;
-    border-radius: 0 0.5rem 0.5rem 0;
+    border-radius: 0.5rem;
     background-color: var(--main-color);
     border: 0;
     color: var(--text-color);
     padding: 10px;
-    font-size: 15px;
+    font-size: 16px;
     outline: 0;
 }
+
+
+.configure-option-input {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
 
 .configure-option-input:focus,
 .configure-option-select:focus {
     background-color: var(--hover-bg);
 }
 
-.chosen-switch-container {
-    display: flex;
-    flex-direction: row;
-    margin: 10px;
-    margin-top: 0px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 5px;
-}
-
-.chosen-switch {
-    background-color: var(--main-color);
-    font-size: 11.5px;
-    border-radius: 0.5rem;
-    max-width: 120px;
-    display: flex;
-    padding: 10px;
-}
-
-.chosen-switch-title {
-    width: 90%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.chosen-switch-x {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    font-weight: bold;
-    background-color: var(--main-color);
-    color: var(--text-color);
-    border: 0;
-    padding: 0;
-    margin: auto;
-    margin-left: 10px;
-    cursor: pointer;
-}
-
-.switch-button {
-    margin: 5px;
-    padding: 10px;
-    border-radius: 0.5rem;
-    border: none;
-    background-color: var(--button-bg);
-    color: var(--text-color);
-}
-
-.switch-button:hover {
-    background-color: var(--button-hover-bg);
+.non-input-margin {
+    margin-top: 30px;
 }
 
 
-/* For html/script-menu.html */
 .script-menu {
     background-color: var(--secondary-bg);
     display: inline-block;
     min-height: 100%;
-    width: 60%;
+    width: 55%;
     padding: 10px;
     border-bottom: solid 13px var(--secondary-bg);
     border-radius: 0 0 0 0.5rem;
@@ -229,9 +189,29 @@ body {
     width: 100%;
 }
 
-.script-title-location-container {
+.script-top-right-container {
+    width: 30%;
+    height: 100%;
     padding: 10px;
+}
+
+.script-move-container {
     width: 100%;
+}
+
+.script-version {
+    width: 100%;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 24px;
+    text-align: right;
+    padding-right: 10px;
+}
+
+.script-title-path-container {
+    padding: 10px;
+    width: 70%;
+    height: 100%;
 }
 
 .script-title {
@@ -314,7 +294,7 @@ body {
     background-color: var(--button-selected-hover-bg);
 }
 
-/* For html/options.html */
+
 .option-buttons-container {
     background-color: var(--body-bg);
     height: 15%;
@@ -381,7 +361,7 @@ body {
 
 
 .modal-title {
-    text-align:center;
+    text-align: center;
     font-size: 20px;
     width: 100%;
     height: 100%;
@@ -399,7 +379,7 @@ body {
     font-size: 40px;
     color: var(--text-color);
     flex-basis: 10%;
-    align-self:flex-end;
+    align-self: flex-end;
     height: 100%;
     background-color: var(--border-color);
     border-radius: 0 0.5rem 0 0;
@@ -421,4 +401,102 @@ body {
     height: 100%;
     font-size: 15px;
     color: var(--text-color)
+}
+
+
+/*
+Copyright - 2025 TimTrayler (Tim Trayler) 
+
+Permission is hereby granted, free of charge, to any person obtaining a 
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+*/
+
+.body-bg {
+    background-color: var(--body-bg);
+}
+
+.rounded-right {
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+.switch-container {
+    width: 100%;
+    background-color: var(--body-bg);
+
+    display: flex;
+    justify-content: end;
+    align-items: center;
+}
+
+.switch {
+    --secondary-container: #3a4b39;
+    --primary: #84da89;
+    font-size: 17px;
+    position: relative;
+    display: inline-block;
+    width: 3.7em;
+    height: 1.8em;
+}
+
+.switch input {
+    display: none;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #313033;
+    transition: .2s;
+    border-radius: 30px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 1.4em;
+    width: 1.4em;
+    border-radius: 20px;
+    left: 0.2em;
+    bottom: 0.2em;
+    background-color: #aeaaae;
+    transition: .4s;
+}
+
+input:checked+.slider::before {
+    background-color: var(--primary);
+}
+
+input:checked+.slider {
+    background-color: var(--secondary-container);
+}
+
+input:focus+.slider {
+    box-shadow: 0 0 1px var(--secondary-container);
+}
+
+input:checked+.slider:before {
+    transform: translateX(1.9em);
 }

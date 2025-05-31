@@ -1,11 +1,13 @@
 // Important config elements
 const configPanel = document.getElementById("configure-container")
 const configShortcut = document.getElementById("configure-shortcut")
+const configTitle = document.getElementById("configure-title")
+const configVersion = document.getElementById("configure-version")
+const configMode = document.getElementById("configure-mode")
 const selectMode = document.getElementById("select-mode")
-const selectSwitches = document.getElementById("select-switches")
-const chosenSwitches = document.getElementById("chosen-switches")
 const configScriptTitle = document.getElementById("script-title")
 const configExit = document.getElementById("config-x")
+const configSwitchInputs = document.getElementById("config-switches")
 const configOtherInputs = document.getElementById("config-others")
 
 
@@ -26,27 +28,7 @@ const modalClose = document.getElementById("modal-close")
 
 // Important components
 const components = {
-    chosenSwitch: (name) => {
-        const container = document.createElement("div")
-        container.classList.add("chosen-switch")
-        container.id = `switch-${name}`
-
-        const title = document.createElement("div")
-        title.classList.add("chosen-switch-title")
-        title.textContent = name
-
-        const button = document.createElement("button")
-        button.classList.add("chosen-switch-x")
-        button.textContent = "✖"
-        button.addEventListener("click", () => removeSwitch(name))
-
-        container.appendChild(title)
-        container.appendChild(button)
-
-        return container
-    },
-
-    scriptItem: (title, location) => {
+    scriptItem: (title, version, location) => {
         const container = document.createElement("div")
         container.classList.add("script-item")
         container.id = `script-${location}`
@@ -55,7 +37,7 @@ const components = {
         topContainer.classList.add("script-top-container")
 
         const titleLocationContainer = document.createElement("div")
-        titleLocationContainer.classList.add("script-title-location-container")
+        titleLocationContainer.classList.add("script-title-path-container")
 
         const titleDiv = document.createElement("div")
         titleDiv.id = `script-title-${location}`
@@ -69,9 +51,23 @@ const components = {
         titleLocationContainer.appendChild(titleDiv)
         titleLocationContainer.appendChild(locationDiv)
 
+        const topRightContainer = document.createElement("div")
+        topRightContainer.classList.add("script-top-right-container")
+
+        const moveScript = document.createElement("div")
+        moveScript.classList.add("script-move-container")
+
+        const scriptVersion = document.createElement("div")
+        scriptVersion.classList.add("script-version")
+        scriptVersion.id = `script-version-${location}`
+        scriptVersion.innerText = "v" + version
+
+        topRightContainer.appendChild(moveScript)
+        topRightContainer.appendChild(scriptVersion)
+
         const optionsContainer = document.createElement("div")
         optionsContainer.classList.add("script-options")
-        optionsContainer.id = `script-${location}-options`
+        optionsContainer.id = `script-options-${location}`
 
         const selectButton = document.createElement("button")
         selectButton.classList.add("script-option")
@@ -94,6 +90,7 @@ const components = {
         optionsContainer.appendChild(removeButton)
 
         topContainer.appendChild(titleLocationContainer)
+        topContainer.appendChild(topRightContainer)
 
         container.appendChild(topContainer)
         container.appendChild(optionsContainer)
@@ -109,22 +106,55 @@ const components = {
         return option
     },
 
-    /* MAKE THIS LOOK BETTER */
-    otherInput: (name, desc, value) => {
+    inputSwitch: (varName, name, desc, value) => {
+        const container = document.createElement("div")
+        container.classList.add("configure-option")
+
+        const title = document.createElement("div")
+        title.classList.add("configure-option-title", "rounded-right")
+        title.textContent = name
+        if (desc !== null) title.title = desc
+
+        const switchContainer = document.createElement("div")
+        switchContainer.classList.add("switch-container")
+
+        const flipLabel = document.createElement("label")
+        flipLabel.classList.add("switch")
+
+        const switchInput = document.createElement("input")
+        switchInput.type = "checkbox"
+        switchInput.id = `input-${varName}`
+        switchInput.addEventListener('change', handleSwitchInput.bind(null, varName))
+        switchInput.checked = value
+
+        const sliderSpan = document.createElement("span")
+        sliderSpan.classList.add("slider")
+
+        flipLabel.appendChild(switchInput)
+        flipLabel.appendChild(sliderSpan)
+
+        switchContainer.appendChild(flipLabel)
+
+        container.appendChild(title)
+        container.appendChild(switchContainer)
+
+        return container
+    },
+
+    otherInput: (varName, name, desc, value) => {
         const container = document.createElement("div")
         container.classList.add("configure-option")
 
         const title = document.createElement("div")
         title.classList.add("configure-option-title")
         title.textContent = name
+        if (desc !== null) title.title = desc
 
         const input = document.createElement("input")
         input.classList.add("configure-option-input")
         input.value = value
-        input.id = `input-${name}`
-        input.addEventListener('focusout', handleOtherInput.bind(null, name))
-
-        if (desc !== null) title.title = desc
+        input.id = `input-${varName}`
+        input.addEventListener('focusout', handleOtherInput.bind(null, varName))
 
         container.appendChild(title)
         container.appendChild(input)
@@ -139,8 +169,8 @@ async function loadScripts() {
     const scripts = await window.electron.loadScripts()
 
     for (const script of scripts) {
-        const scriptItem = components.scriptItem(script[0], script[1])
-        scriptMenu.append(scriptItem)
+        const scriptItem = components.scriptItem(script[0], script[1], script[2])
+        scriptMenu.appendChild(scriptItem)
     }
 }
 
@@ -149,10 +179,11 @@ loadScripts()
 
 /*....... Event listeners .......*/
 
-selectSwitches.addEventListener('change', handleSelectSwitchesChange)
 selectMode.addEventListener('change', handleSelectModeChange)
 
 configShortcut.addEventListener('focusout', handleShortcutInput)
+configTitle.addEventListener('focusout', handleTitleInput)
+configVersion.addEventListener('focusout', handleVersionInput)
 
 configShortcut.addEventListener('keydown', (event) => {
     if (event.key === "Enter") handleShortcutInput()
@@ -184,13 +215,6 @@ window.electron.runListener((event, message) => {
 
 /*....... Functions for listeners to add on elements .......*/
 
-function removeSwitch(name) {
-    curConfig.inputValues[name] = false
-    document.getElementById(`switch-${name}`).remove()
-    selectSwitches.append(components.optionItem(name))
-}
-
-
 async function openScript(location) {
     await window.electron.openScript(location)
 }
@@ -218,10 +242,12 @@ async function configureScript(location) {
     curConfig = tempConfig.loaded
     curLocation = location
 
-    setOptions(curConfig.validInputs.MODES, curConfig.validInputs.SWITCHES.filter((val) => !curConfig.inputValues[val] === true))
-    addSwitches(curConfig.validInputs.SWITCHES)
+    loadModes()
+    loadSwitches()
     loadOtherInputs()
 
+    configTitle.value = curConfig.TITLE
+    configVersion.value = curConfig.VERSION
     configScriptTitle.innerText = curConfig.TITLE
 
     if (curConfig.SHORTCUT !== null) configShortcut.value = curConfig.SHORTCUT
@@ -243,6 +269,7 @@ async function removeScript(location) {
     if (curLocation === location) {
         curConfig = {}
         initialConfig = {}
+        curLocation = null
         setDisableConfig(true)
     }
 }
@@ -250,27 +277,17 @@ async function removeScript(location) {
 
 /*....... Functions for event listeners up there .......*/
 
-async function handleOtherInput(name) {
-    const type = getType(name, curConfig.validInputs)
-    const formatted = formatInput(document.getElementById(`input-${name}`).value, type)
+async function handleOtherInput(varName) {
+    const type = getType(varName, curConfig.validInputs)
+    const formatted = formatInput(document.getElementById(`input-${varName}`).value, type)
 
-    curConfig.inputValues[name] = formatted
+    curConfig.inputValues[varName] = formatted
     await saveConfig()
 }
 
 
-async function handleSelectSwitchesChange() {
-    const newSwitch = selectSwitches.value
-    selectSwitches.value = ""
-
-    if (newSwitch.value === "") {
-        return
-    }
-
-    curConfig.inputValues[newSwitch] = false
-    chosenSwitches.append(components.chosenSwitch(newSwitch))
-    document.getElementById(`option-${newSwitch}`).remove()
-
+async function handleSwitchInput(varName) {
+    curConfig.inputValues[varName] = document.getElementById(`input-${varName}`).checked
     await saveConfig()
 }
 
@@ -278,6 +295,10 @@ async function handleSelectSwitchesChange() {
 async function handleSelectModeChange() {
     curConfig.validInputs.MODES.forEach(val => curConfig.inputValues[val] = false)
     curConfig.inputValues[selectMode.value] = true
+
+    const description = curConfig.validInputs.META[selectMode.value]?.description
+    if (description !== undefined) selectMode.title = description
+
     await saveConfig()
 }
 
@@ -290,7 +311,7 @@ async function handleShortcutInput() {
         changed = true
     }
 
-    else if (curConfig.SHORTCUT !== configShortcut.value) {
+    else if (curConfig.SHORTCUT !== configShortcut.value && !(configShortcut.value === "" && curConfig.SHORTCUT === null)) {
         curConfig.SHORTCUT = configShortcut.value
         changed = true
     }
@@ -301,13 +322,29 @@ async function handleShortcutInput() {
 }
 
 
+async function handleTitleInput() {
+    if (configTitle.value !== curConfig.TITLE) {
+        curConfig.TITLE = configTitle.value
+        await saveConfig()
+    }
+}
+
+
+async function handleVersionInput() {
+    if (configVersion.value !== curConfig.VERSION) {
+        curConfig.VERSION = configVersion.value
+        await saveConfig()
+    }
+}
+
+
 async function handleLoadButton() {
     const newScript = await window.electron.loadNewScript()
     if (newScript.err) errorModal(newScript.errTitle, newScript.errMessage)
     if (!newScript.loaded) return
 
-    const scriptItem = components.scriptItem(newScript.loaded.TITLE, newScript.loaded.PATH)
-    scriptMenu.append(scriptItem)
+    const scriptItem = components.scriptItem(newScript.loaded.TITLE, newScript.loaded.VERSION, newScript.loaded.PATH)
+    scriptMenu.appendChild(scriptItem)
 }
 
 
@@ -320,13 +357,17 @@ async function saveConfig() {
     }
 
     else if (!response.saved) {
-        console.log(response)
         if (!response.errTitle) alertToast("Invalid configuration!")
         else errorModal(response.errTitle, response.errMessage)
         curConfig = JSON.parse(JSON.stringify(initialConfig))
     }
 
-    else saveToast()
+    else {
+        configScriptTitle.innerText = curConfig.TITLE
+        document.getElementById(`script-title-${curLocation}`).innerText = curConfig.TITLE
+        document.getElementById(`script-version-${curLocation}`).innerText = "v" + curConfig.VERSION
+        saveToast()
+    }
 }
 
 
@@ -348,9 +389,11 @@ function handleModalClose() {
 /*....... Helper functions .......*/
 
 function setDisableConfig(disable) {
+    configMode.classList.add("hidden")
     configShortcut.disabled = disable
+    configTitle.disabled = disable
+    configVersion.disabled = disable
     selectMode.disabled = disable
-    selectSwitches.disabled = disable
     runButton.disabled = disable
     configExit.disabled = disable
 
@@ -364,42 +407,18 @@ function setDisableConfig(disable) {
         runButton.innerText = "🚀 Run"
         configOtherInputs.innerHTML = ""
         configOtherInputs.classList.add("hidden")
+        configSwitchInputs.innerHTML = ""
+        configSwitchInputs.classList.add("hidden")
         configPanel.classList.add("opacity-low")
         runButton.classList.add("opacity-low")
         configShortcut.value = ""
-        setOptions(["$DEFAULT"], [])
-        addSwitches([])
+        configTitle.value = ""
+        configVersion.value = ""
         curLocation ? toggleSelected(curLocation, false) : 0
         configScriptTitle.innerText = "No script selected"
         curConfig = {}
         curLocation = null
         initialConfig = {}
-    }
-}
-
-
-function setOptions(modeOptions, switchOptions) {
-    selectMode.innerHTML = ""
-    selectSwitches.innerHTML = ""
-
-    selectSwitches.append(components.optionItem("", "Add switch"))
-    selectSwitches.value = ""
-
-    for (const mode of modeOptions) {
-        selectMode.appendChild(components.optionItem(mode))
-    }
-
-    for (const switchOption of switchOptions) {
-        selectSwitches.appendChild(components.optionItem(switchOption))
-    }
-}
-
-
-function addSwitches(switches) {
-    chosenSwitches.innerHTML = ""
-    for (const switsh of switches) {
-        const switchElement = components.chosenSwitch(switsh)
-        chosenSwitches.append(switchElement)
     }
 }
 
@@ -485,20 +504,54 @@ function escapeString(string) {
 }
 
 
+function loadModes() {
+    selectMode.innerHTML = ""
+
+    if (curConfig.validInputs.MODES.length === 0) {
+        configMode.classList.add("hidden")
+        return selectMode
+    }
+    configMode.classList.remove("hidden")
+
+    for (const mode of curConfig.validInputs.MODES) {
+        const optionItem = components.optionItem(mode, curConfig.validInputs.META[mode]?.name)
+        selectMode.appendChild(optionItem)
+    }
+
+    selectMode.value = curConfig.validInputs.MODES.find(x => curConfig.inputValues[x])
+    const description = curConfig.validInputs.META[selectMode.value]?.description
+    if (description !== undefined) selectMode.title = description
+}
+
+
+function loadSwitches() {
+    if (curConfig.validInputs.SWITCHES.length === 0) return
+    configSwitchInputs.classList.remove("hidden")
+
+    for (const switchInput of curConfig.validInputs.SWITCHES) {
+        const inputElement = components.inputSwitch(
+            switchInput,
+            curConfig.validInputs.META[switchInput]?.name || switchInput,
+            curConfig.validInputs.META[switchInput]?.description || null,
+            curConfig.inputValues[switchInput])
+        configSwitchInputs.appendChild(inputElement)
+    }
+}
+
+
 function loadOtherInputs() {
-    console.log(curConfig)
-    const otherInputs = [...Object.keys(curConfig.validInputs.VECTORS), ...Object.keys(curConfig.validInputs.NUMBERS), ...curConfig.validInputs.STRINGS]
+    const otherInputs = [...Object.keys(curConfig.validInputs.NUMBERS), ...Object.keys(curConfig.validInputs.VECTORS), ...curConfig.validInputs.STRINGS]
     if (otherInputs.length === 0) return
 
     configOtherInputs.classList.remove("hidden")
-    configOtherInputs.innerHTML = ""
 
     for (const input of otherInputs) {
         const inputElement = components.otherInput(
+            input,
             curConfig.validInputs.META[input]?.name || input,
             curConfig.validInputs.META[input]?.description || null,
             String(curConfig.inputValues[input]))
-        configOtherInputs.append(inputElement)
+        configOtherInputs.appendChild(inputElement)
     }
 }
 

@@ -178,6 +178,11 @@ function fixInputs(location, scriptInfo, inputs = null) {
             delete scriptInfo.inputValues[varName]
 
             let type = getType(varName, scriptInfo.validInputs)
+
+            if (type === null) {
+                continue
+            }
+
             type += type === "SWITCH" ? "ES" : "S"
 
             const inGrp = scriptInfo.validInputs[type]
@@ -233,7 +238,7 @@ async function toggleScript(path) {
 
 function basenameNS(filePath) {
     let base = path.basename(filePath)
-    base.slice(0, base.indexOf("."))
+    base = base.slice(0, base.indexOf("."))
     return base
 }
 
@@ -268,7 +273,7 @@ ipcMain.handle('load-scripts', async () => {
     const scriptArray = []
 
     for (const script in scripts) {
-        scriptArray.push([scripts[script].TITLE, script])
+        scriptArray.push([scripts[script].TITLE, scripts[script].VERSION, script])
     }
 
     return scriptArray
@@ -324,7 +329,7 @@ ipcMain.handle('save-script', async (event, location, options) => {
 
     if (validateInputs(options.validInputs, options.inputValues) !== true) return false
 
-    if (options.SHORTCUT !== null && validateShortcut(options.SHORTCUT) !== true) {
+    if (options.SHORTCUT !== null && options.SHORTCUT !== scripts[location].SHORTCUT && validateShortcut(options.SHORTCUT) !== true) {
         return {
             saved: false,
             reload: false
