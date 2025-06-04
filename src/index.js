@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, globalShortcut, screen, shell } = require('electron')
-const path = require('path')
 const started = require('electron-squirrel-startup')
+const path = require('path')
 
 const fs = require('fs-extra')
 const appVersion = "v" + app.getVersion()
@@ -38,15 +38,18 @@ const running = {};
             .then(data => JSON.parse(data))
             .then(scripts => {
                 for (const script in scripts) {
+                    if (script === "ORDER") continue
                     if (scripts[script].SHORTCUT === null) continue
                     if (addShortcut(scripts[script].SHORTCUT, script) !== true) throw Error(`${scripts[script].TITLE} — ${scripts[script].SHORTCUT}`)
                 }
             })
-            .catch((err) => dialog.showErrorBox("An Error Occured", `Error setting global shortcuts. A shortcut may be invalid or already taken by another program: ${err.message}.`))
+            .catch((err) => dialog.showErrorBox(
+                "An Error Occured",
+                `Error setting global shortcuts. A shortcut may be invalid or already taken by another program: ${err.message}.`))
     }
 
     catch (err) {
-        await fs.writeFile(scriptsPath, JSON.stringify({}, null, 4))
+        await fs.writeFile(scriptsPath, JSON.stringify({ ORDER: [] }, null, 4))
     }
 })()
 
@@ -270,13 +273,14 @@ ipcMain.handle('run-stop-script', async (event, location) => {
 
 ipcMain.handle('load-scripts', async () => {
     const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
-    const scriptArray = []
+    const scriptObj = {}
 
     for (const script in scripts) {
-        scriptArray.push([scripts[script].TITLE, scripts[script].VERSION, script])
+        if (script === "ORDER") continue
+        scriptObj[script] = [scripts[script].TITLE, scripts[script].VERSION, script]
     }
 
-    return scriptArray
+    return { scripts: scriptObj, order: scripts.ORDER }
 })
 
 
@@ -287,6 +291,7 @@ ipcMain.handle('remove-script', async (event, location) => {
 
     try {
         if (scripts[location].SHORTCUT !== null) globalShortcut.unregister(scripts[location].SHORTCUT)
+        if (running[location]) toggleScript(location)
 
         delete scripts[location]
         await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
@@ -329,11 +334,21 @@ ipcMain.handle('save-script', async (event, location, options) => {
 
     if (validateInputs(options.validInputs, options.inputValues) !== true) return false
 
-    if (options.SHORTCUT !== null && options.SHORTCUT !== scripts[location].SHORTCUT && validateShortcut(options.SHORTCUT) !== true) {
-        return {
-            saved: false,
-            reload: false
+    if (options.SHORTCUT !== null && options.SHORTCUT !== scripts[location].SHORTCUT) {
+        if (!addShortcut(options.SHORTCUT, location)) {
+            return {
+                saved: false,
+                reload: false
+            }
         }
+
+        if (scripts[location].SHORTCUT !== null) {
+            globalShortcut.unregister(scripts[location].SHORTCUT)
+        }
+    }
+
+    if (options.SHORTCUT === null && scripts[location].SHORTCUT !== null) {
+        globalShortcut.unregister(scripts[location].SHORTCUT)
     }
 
     scripts[location] = options
@@ -346,7 +361,7 @@ ipcMain.handle('save-script', async (event, location, options) => {
 })
 
 
-ipcMain.handle('load-new-script', async () => {
+ipcMain.handle('load-new-script', async (event) => {
     const { canceled: cancelled, filePaths } = await dialog.showOpenDialog({
         title: "Select a Simkey Script",
         properties: ["openFile"],
@@ -369,11 +384,13 @@ ipcMain.handle('load-new-script', async () => {
         const openFile = new Interpret(filePaths[0])
         const { INPUTS, VARIABLES } = openFile.getInputs()
 
-        scriptInfo = {
+        const scriptInfo = {
             ...openFile.getMeta(),
             validInputs: INPUTS,
             inputValues: VARIABLES
         }
+
+        scripts.ORDER.push(filePaths[0])
 
         if (scriptInfo.TITLE === "") scriptInfo.TITLE = basenameNS(filePaths[0])
 
@@ -408,6 +425,14 @@ ipcMain.handle('load-new-script', async () => {
             errMessage: `Error occured while loading INPUTS from the file. ERROR:\n${err}`,
         }
     }
+})
+
+
+ipcMain.handle('save-script-order', async (event, order) => {
+    const scripts = JSON.parse(await fs.readFile(scriptsPath, "utf-8"))
+    scripts.ORDER = order
+
+    await fs.writeFile(scriptsPath, JSON.stringify(scripts, null, 4))
 })
 
 

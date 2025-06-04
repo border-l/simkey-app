@@ -54,15 +54,28 @@ const components = {
         const topRightContainer = document.createElement("div")
         topRightContainer.classList.add("script-top-right-container")
 
-        const moveScript = document.createElement("div")
-        moveScript.classList.add("script-move-container")
+        const moveScriptContainer = document.createElement("div")
+        moveScriptContainer.classList.add("script-move-container")
+
+        const upButton = document.createElement("div")
+        upButton.classList.add("script-move-button")
+        upButton.innerText = "↑"
+        upButton.addEventListener("click", () => moveScript(location, true))
+
+        const downButton = document.createElement("div")
+        downButton.classList.add("script-move-button")
+        downButton.innerText = "↓"
+        downButton.addEventListener("click", () => moveScript(location, false))
+
+        moveScriptContainer.appendChild(upButton)
+        moveScriptContainer.appendChild(downButton)
 
         const scriptVersion = document.createElement("div")
         scriptVersion.classList.add("script-version")
         scriptVersion.id = `script-version-${location}`
         scriptVersion.innerText = "v" + version
 
-        topRightContainer.appendChild(moveScript)
+        topRightContainer.appendChild(moveScriptContainer)
         topRightContainer.appendChild(scriptVersion)
 
         const optionsContainer = document.createElement("div")
@@ -164,11 +177,22 @@ const components = {
 }
 
 
+// Keep track of what is currently being configured
+let curConfig = {}
+let curLocation = null
+let initialConfig = {}
+let running = {}
+let order = []
+
+
 // Load scripts from main
 async function loadScripts() {
-    const scripts = await window.electron.loadScripts()
+    const { scripts, order: ordr } = await window.electron.loadScripts()
+    order = ordr
 
-    for (const script of scripts) {
+    console.log(order)
+    for (const scriptPath of order) {
+        const script = scripts[scriptPath]
         const scriptItem = components.scriptItem(script[0], script[1], script[2])
         scriptMenu.appendChild(scriptItem)
     }
@@ -196,13 +220,6 @@ utilsButton.addEventListener('click', handleUtilsButton)
 configExit.addEventListener('click', () => setDisableConfig(true))
 
 modalClose.addEventListener('click', handleModalClose)
-
-
-// Keep track of what is currently being configured
-let curConfig = {}
-let curLocation = null
-let initialConfig = {}
-let running = {}
 
 
 // Listen to scripts running and exiting
@@ -272,6 +289,36 @@ async function removeScript(location) {
         curLocation = null
         setDisableConfig(true)
     }
+}
+
+
+async function moveScript(path, up) {
+    const scriptElements = Array.from(scriptMenu.getElementsByClassName("script-item"))
+
+    const index = order.indexOf(path)
+    if ((index === order.length - 1 && !up) || (index === 0 && up)) return
+
+    if (up) {
+        const tempElement = scriptElements[index - 1]
+        scriptElements[index - 1] = scriptElements[index]
+        scriptElements[index] = tempElement
+
+        const tempOrder = order[index - 1]
+        order[index - 1] = order[index]
+        order[index] = tempOrder
+    }
+    else {
+        const tempElement = scriptElements[index + 1]
+        scriptElements[index + 1] = scriptElements[index]
+        scriptElements[index] = tempElement
+
+        const tempOrder = order[index + 1]
+        order[index + 1] = order[index]
+        order[index] = tempOrder
+    }
+
+    scriptMenu.replaceChildren(scriptMenu.children[0], ...scriptElements)
+    await window.electron.saveScriptOrder(order)
 }
 
 

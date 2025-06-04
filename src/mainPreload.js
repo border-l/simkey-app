@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electron', {
     loadScripts: () => ipcRenderer.invoke("load-scripts"),
     reloadScript: (location) => ipcRenderer.invoke("reload-script", location),
     saveScript: (location, options, forceRecompile) => ipcRenderer.invoke("save-script", location, options, forceRecompile),
+    saveScriptOrder: (order) => ipcRenderer.invoke("save-script-order", order),
     getScriptOptions: (location) => ipcRenderer.invoke("get-script-options", location),
     removeScript: (location) => ipcRenderer.invoke("remove-script", location),
     openScript: (location) => ipcRenderer.invoke("open-script", location),
